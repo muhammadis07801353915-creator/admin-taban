@@ -34,7 +34,34 @@ const COMMON_MODELS: Record<string, string[]> = {
   "Mitsubishi": ["Mirage", "Lancer", "ASX", "Outlander", "Pajero", "L200"]
 };
 
-const COMMON_SPECS = ["SV", "SLE", "SE", "Limited", "Platinum", "Sport", "Touring", "XLE", "SR5", "TRD Off-Road", "Premium", "Base", "Ultimate", "Full Option", "Standard"];
+const COMMON_SPECS = ["Standard", "Full Option", "Half Option", "Base", "Premium", "Limited", "Sport", "Touring", "Platinum"];
+
+const MODEL_SPECS: Record<string, string[]> = {
+  "Land Cruiser": ["GXR", "VXR", "GX", "VX", "EXR", "Safari", "GR Sport", "V6", "V8"],
+  "Patrol": ["XE", "SE", "LE", "Platinum", "Nismo", "Titanium", "Super Safari"],
+  "Camry": ["LE", "SE", "XLE", "XSE", "TRD", "Hybrid"],
+  "Corolla": ["L", "LE", "SE", "XLE", "XSE"],
+  "Hilux": ["GL", "GLX", "Adventure", "Invincible"],
+  "Prado": ["TX", "TXL", "VXL"],
+  "Tucson": ["Smart", "Comfort", "Executive", "Premium", "Ultimate", "N Line"],
+  "Santa Fe": ["SE", "SEL", "Limited", "Calligraphy"],
+  "Elantra": ["SE", "SEL", "Limited", "N Line"],
+  "Sportage": ["LX", "S", "EX", "SX", "SX Prestige"],
+  "Sorento": ["LX", "S", "EX", "SX", "SX Prestige"],
+  "Tahoe": ["LS", "LT", "RST", "Z71", "Premier", "High Country"],
+  "Silverado": ["WT", "Custom", "LT", "RST", "LTZ", "High Country"],
+  "F-150": ["XL", "XLT", "Lariat", "King Ranch", "Platinum", "Limited", "Raptor"],
+  "Mustang": ["EcoBoost", "GT", "Mach 1", "Shelby GT500"],
+  "Range Rover": ["HSE", "Autobiography", "SV"],
+  "G-Class": ["G500", "G63 AMG"],
+  "C-Class": ["C200", "C300", "C43 AMG", "C63 AMG"],
+  "E-Class": ["E200", "E300", "E350", "E450", "E53 AMG", "E63 AMG"],
+  "S-Class": ["S450", "S500", "S580", "S680 Maybach"],
+  "A4": ["Premium", "Premium Plus", "Prestige"],
+  "A6": ["Premium", "Premium Plus", "Prestige"],
+  "Q5": ["Premium", "Premium Plus", "Prestige"],
+  "Q7": ["Premium", "Premium Plus", "Prestige"]
+};
 
 type ViewState = 'brands' | 'models' | 'specs';
 
@@ -94,6 +121,14 @@ export default function BrandsPage() {
       const { data, error } = await supabase.from('specs').select('*').eq('model_id', modelId).order('name');
       if (error) throw error;
       setSpecs(data || []);
+
+      // Auto-bulk if empty
+      if (data && data.length === 0 && selectedModel) {
+        const list = MODEL_SPECS[selectedModel.name] || MODEL_SPECS[Object.keys(MODEL_SPECS).find(k => k.toLowerCase() === selectedModel.name.toLowerCase()) || ''] || COMMON_SPECS;
+        if (list.length > 0) {
+          handleBulk(true);
+        }
+      }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -114,8 +149,9 @@ export default function BrandsPage() {
         if (toAdd.length > 0) await supabase.from('models').insert(toAdd);
         await fetchModels(selectedBrand.id);
       } else if (view === 'specs' && selectedModel) {
+        const list = MODEL_SPECS[selectedModel.name] || MODEL_SPECS[Object.keys(MODEL_SPECS).find(k => k.toLowerCase() === selectedModel.name.toLowerCase()) || ''] || COMMON_SPECS;
         const existing = specs.map(s => s.name.toLowerCase());
-        const toAdd = COMMON_SPECS.filter(s => !existing.includes(s.toLowerCase())).map(name => ({ name, model_id: selectedModel.id }));
+        const toAdd = list.filter(s => !existing.includes(s.toLowerCase())).map(name => ({ name, model_id: selectedModel.id }));
         if (toAdd.length > 0) await supabase.from('specs').insert(toAdd);
         await fetchSpecs(selectedModel.id);
       }
@@ -173,9 +209,12 @@ export default function BrandsPage() {
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const suggestions = view === 'models' && selectedBrand ? (
+  const suggestions = (view === 'models' && selectedBrand) ? (
     (COMMON_MODELS[selectedBrand.name] || COMMON_MODELS[Object.keys(COMMON_MODELS).find(k => k.toLowerCase() === selectedBrand.name.toLowerCase()) || ''] || [])
     .filter(name => !models.some(m => m.name.toLowerCase() === name.toLowerCase()))
+  ) : (view === 'specs' && selectedModel) ? (
+    (MODEL_SPECS[selectedModel.name] || MODEL_SPECS[Object.keys(MODEL_SPECS).find(k => k.toLowerCase() === selectedModel.name.toLowerCase()) || ''] || COMMON_SPECS)
+    .filter(name => !specs.some(s => s.name.toLowerCase() === name.toLowerCase()))
   ) : [];
 
   return (
@@ -221,9 +260,9 @@ export default function BrandsPage() {
       )}
 
       {/* Suggestions */}
-      {view === 'models' && suggestions.length > 0 && !loading && (
+      {(view === 'models' || view === 'specs') && suggestions.length > 0 && !loading && (
         <div className="bg-slate-50 p-6 rounded-[32px] border border-slate-100 animate-in fade-in slide-in-from-top-2">
-          <p className="text-sm font-bold text-slate-500 mb-4 uppercase tracking-wider">Suggested Models</p>
+          <p className="text-sm font-bold text-slate-500 mb-4 uppercase tracking-wider">Suggested {view === 'models' ? 'Models' : 'Specs'}</p>
           <div className="flex flex-wrap gap-2">
             {suggestions.slice(0, 15).map(name => (
               <button 
@@ -231,8 +270,13 @@ export default function BrandsPage() {
                 onClick={async () => {
                   setLoading(true);
                   try {
-                    await supabase.from('models').insert([{ name, brand_id: selectedBrand.id }]);
-                    await fetchModels(selectedBrand.id);
+                    if (view === 'models') {
+                      await supabase.from('models').insert([{ name, brand_id: selectedBrand.id }]);
+                      await fetchModels(selectedBrand.id);
+                    } else {
+                      await supabase.from('specs').insert([{ name, model_id: selectedModel.id }]);
+                      await fetchSpecs(selectedModel.id);
+                    }
                   } catch (e) { console.error(e); }
                   finally { setLoading(false); }
                 }}

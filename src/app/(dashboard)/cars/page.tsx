@@ -60,10 +60,13 @@ export default function CarsPage() {
   };
 
   const deleteCar = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this car?')) return;
+    if (!confirm('ئایا دڵنیایت لە سڕینەوەی ئەم سەیارەیە؟')) return;
     const { error } = await supabase.from('cars').delete().eq('id', id);
     if (!error) {
       setCars(cars.filter(c => c.id !== id));
+      alert('سەیارەکە بە سەرکەوتوویی سڕایەوە');
+    } else {
+      alert('هەڵەیەک ڕوویدا لە کاتی سڕینەوە: ' + error.message);
     }
   };
 

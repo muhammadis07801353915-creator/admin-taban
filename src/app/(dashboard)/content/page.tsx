@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { 
   Plus, Search, Edit2, Trash2, Save, X, 
   ChevronRight, LayoutGrid, Car, MapPin, 
-  Palette, ShieldCheck, Settings2, Globe
+  Palette, ShieldCheck, Settings2, Globe, Image as ImageIcon
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -18,6 +18,7 @@ const CATEGORIES = [
   { id: 'colors', name: 'ڕەنگەکان', table: 'meta_colors', icon: Palette },
   { id: 'import_countries', name: 'وڵاتی هاوردە', table: 'meta_import_countries', icon: Globe },
   { id: 'extra_features', name: 'مواسەفاتی زیادە', table: 'meta_extra_features', icon: Plus },
+  { id: 'ads', name: 'ڕیکڵامەکان (Slider)', table: 'meta_ads', icon: ImageIcon },
 ];
 
 export default function ContentManager() {
@@ -51,6 +52,7 @@ export default function ContentManager() {
     
     const payload: any = { name: newItemName };
     if (activeCategory.id === 'colors') payload.hex = extraField || '#CCCCCC';
+    if (activeCategory.id === 'ads') payload.image_url = extraField;
     
     const { error } = await supabase.from(activeCategory.table).insert([payload]);
     if (!error) {
@@ -63,7 +65,11 @@ export default function ContentManager() {
   async function handleUpdate(id: any) {
     const { error } = await supabase
       .from(activeCategory.table)
-      .update({ name: newItemName, hex: activeCategory.id === 'colors' ? extraField : undefined })
+      .update({ 
+        name: newItemName, 
+        hex: activeCategory.id === 'colors' ? extraField : undefined,
+        image_url: activeCategory.id === 'ads' ? extraField : undefined
+      })
       .eq('id', id);
     
     if (!error) {
@@ -137,6 +143,15 @@ export default function ContentManager() {
                 onChange={(e) => setExtraField(e.target.value)}
               />
             )}
+            {activeCategory.id === 'ads' && (
+              <input 
+                type="text"
+                placeholder="لینکی وێنەی ڕیکڵام"
+                className="bg-gray-50 border-none rounded-2xl py-3.5 px-6 text-right font-bold w-64"
+                value={extraField}
+                onChange={(e) => setExtraField(e.target.value)}
+              />
+            )}
             <input 
               type="text"
               placeholder={`ناوی نوێ بۆ ${activeCategory.name}`}
@@ -174,6 +189,13 @@ export default function ContentManager() {
                     <span className="text-lg font-black text-slate-800">{item.name}</span>
                     {activeCategory.id === 'colors' && (
                       <div className="w-6 h-6 rounded-full border border-gray-100" style={{ backgroundColor: item.hex }} />
+                    )}
+                    {activeCategory.id === 'ads' && (
+                      <img 
+                        src={item.image_url} 
+                        className="w-16 h-10 rounded-lg object-cover" 
+                        alt="Ad"
+                      />
                     )}
                   </div>
                 </div>

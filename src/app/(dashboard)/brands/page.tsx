@@ -12,9 +12,26 @@ import {
 const COMMON_BRANDS = ["Toyota", "Honda", "Ford", "Chevrolet", "Nissan", "BMW", "Mercedes-Benz", "Kia", "Hyundai", "Volkswagen", "Audi", "Lexus", "Land Rover", "Jeep", "GMC", "Dodge", "Mazda", "Subaru", "Volvo", "Mitsubishi"].slice(0, 50);
 
 const COMMON_MODELS: Record<string, string[]> = {
-  "Toyota": ["Corolla", "Camry", "RAV4", "Highlander", "Tacoma", "Tundra", "Prius", "Avalon", "Sienna", "4Runner", "Sequoia", "Land Cruiser", "Supra", "GR86", "Venza", "C-HR", "Crown", "Yaris"],
+  "Toyota": ["Camry", "Corolla", "RAV4", "Highlander", "Tacoma", "Tundra", "Prius", "Avalon", "Sienna", "4Runner", "Sequoia", "Land Cruiser", "Supra", "GR86", "Venza", "C-HR", "Crown", "Yaris"],
   "Honda": ["Civic", "Accord", "CR-V", "Pilot", "Odyssey", "Ridgeline", "HR-V", "Passport", "Insight"],
-  "BMW": ["3 Series", "5 Series", "X3", "X5", "7 Series", "X1", "X7", "4 Series", "M3", "M5"]
+  "BMW": ["3 Series", "5 Series", "X3", "X5", "7 Series", "X1", "X7", "4 Series", "M3", "M5", "Z4", "i4", "iX", "i7"],
+  "Audi": ["A1", "A3", "A4", "A5", "A6", "A7", "A8", "Q2", "Q3", "Q5", "Q7", "Q8", "R8", "TT", "e-tron", "e-tron GT"],
+  "Mercedes-Benz": ["A-Class", "B-Class", "C-Class", "E-Class", "S-Class", "GLA", "GLB", "GLC", "GLE", "GLS", "G-Class", "CLA", "CLS", "SL", "AMG GT", "EQE", "EQS"],
+  "Volkswagen": ["Golf", "Polo", "Passat", "Tiguan", "Touareg", "Jetta", "Arteon", "ID.3", "ID.4", "T-Roc", "T-Cross"],
+  "Ford": ["Fiesta", "Focus", "Mustang", "Ranger", "F-150", "Explorer", "Escape", "Edge", "Mach-E", "Bronco", "Expedition"],
+  "Chevrolet": ["Spark", "Malibu", "Camaro", "Corvette", "Equinox", "Tahoe", "Suburban", "Silverado", "Traverse", "Blazer"],
+  "Nissan": ["Micra", "Altima", "Maxima", "Sentra", "370Z", "GT-R", "Juke", "Qashqai", "X-Trail", "Patrol", "Pathfinder", "Frontier"],
+  "Kia": ["Picanto", "Rio", "Ceed", "Stinger", "Sportage", "Sorento", "Carnival", "EV6", "Telluride", "Seltos", "K5"],
+  "Hyundai": ["i10", "i20", "i30", "Elantra", "Sonata", "Kona", "Tucson", "Santa Fe", "Ioniq 5", "Palisade", "Venue"],
+  "Lexus": ["IS", "ES", "LS", "NX", "RX", "GX", "LX", "LC", "UX"],
+  "Land Rover": ["Defender", "Discovery", "Range Rover", "Range Rover Sport", "Velar", "Evoque"],
+  "Jeep": ["Renegade", "Compass", "Cherokee", "Grand Cherokee", "Wrangler", "Gladiator"],
+  "GMC": ["Terrain", "Acadia", "Yukon", "Sierra", "Canyon"],
+  "Dodge": ["Charger", "Challenger", "Durango", "Ram 1500", "Ram 2500"],
+  "Mazda": ["2", "3", "6", "CX-3", "CX-30", "CX-5", "CX-9", "MX-5"],
+  "Subaru": ["Impreza", "Legacy", "Forester", "Outback", "XV", "WRX", "BRZ"],
+  "Volvo": ["S60", "S90", "V60", "V90", "XC40", "XC60", "XC90"],
+  "Mitsubishi": ["Mirage", "Lancer", "ASX", "Outlander", "Pajero", "L200"]
 };
 
 const COMMON_SPECS = ["SV", "SLE", "SE", "Limited", "Platinum", "Sport", "Touring", "XLE", "SR5", "TRD Off-Road", "Premium", "Base", "Ultimate", "Full Option", "Standard"];
@@ -59,6 +76,14 @@ export default function BrandsPage() {
       const { data, error } = await supabase.from('models').select('*').eq('brand_id', brandId).order('name');
       if (error) throw error;
       setModels(data || []);
+      
+      // Auto-bulk if empty and common models exist
+      if (data && data.length === 0 && selectedBrand) {
+        const list = COMMON_MODELS[selectedBrand.name] || COMMON_MODELS[Object.keys(COMMON_MODELS).find(k => k.toLowerCase() === selectedBrand.name.toLowerCase()) || ''] || [];
+        if (list.length > 0) {
+          handleBulk(true);
+        }
+      }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -73,8 +98,8 @@ export default function BrandsPage() {
     finally { setLoading(false); }
   };
 
-  const handleBulk = async () => {
-    if (!confirm('Proceed with bulk import?')) return;
+  const handleBulk = async (silent = false) => {
+    if (!silent && !confirm('Proceed with bulk import?')) return;
     setLoading(true);
     try {
       if (view === 'brands') {
@@ -94,7 +119,7 @@ export default function BrandsPage() {
         if (toAdd.length > 0) await supabase.from('specs').insert(toAdd);
         await fetchSpecs(selectedModel.id);
       }
-    } catch (e) { alert('Error during bulk import'); }
+    } catch (e) { if (!silent) alert('Error during bulk import'); }
     finally { setLoading(false); }
   };
 
@@ -148,6 +173,11 @@ export default function BrandsPage() {
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const suggestions = view === 'models' && selectedBrand ? (
+    (COMMON_MODELS[selectedBrand.name] || COMMON_MODELS[Object.keys(COMMON_MODELS).find(k => k.toLowerCase() === selectedBrand.name.toLowerCase()) || ''] || [])
+    .filter(name => !models.some(m => m.name.toLowerCase() === name.toLowerCase()))
+  ) : [];
+
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4">
       {/* Header */}
@@ -169,7 +199,7 @@ export default function BrandsPage() {
             <input placeholder="Search..." className="w-full bg-slate-50 border border-slate-100 h-12 rounded-2xl pl-12 pr-4 font-bold outline-none" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <button onClick={handleBulk} className="flex-1 bg-slate-900 text-white h-12 px-6 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-slate-500/20"><Download size={18} /> Bulk</button>
+            <button onClick={() => handleBulk(false)} className="flex-1 bg-slate-900 text-white h-12 px-6 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-slate-500/20"><Download size={18} /> Bulk</button>
             <button onClick={() => setIsAdding(true)} className="flex-1 bg-[#CC222F] text-white h-12 px-6 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"><Plus size={18} /> Add</button>
           </div>
         </div>
@@ -187,6 +217,32 @@ export default function BrandsPage() {
               <span className="text-[#CC222F]">{selectedModel?.name}</span>
             </>
           ) : <span className="text-[#CC222F]">{selectedBrand?.name}</span>}
+        </div>
+      )}
+
+      {/* Suggestions */}
+      {view === 'models' && suggestions.length > 0 && !loading && (
+        <div className="bg-slate-50 p-6 rounded-[32px] border border-slate-100 animate-in fade-in slide-in-from-top-2">
+          <p className="text-sm font-bold text-slate-500 mb-4 uppercase tracking-wider">Suggested Models</p>
+          <div className="flex flex-wrap gap-2">
+            {suggestions.slice(0, 15).map(name => (
+              <button 
+                key={name} 
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    await supabase.from('models').insert([{ name, brand_id: selectedBrand.id }]);
+                    await fetchModels(selectedBrand.id);
+                  } catch (e) { console.error(e); }
+                  finally { setLoading(false); }
+                }}
+                className="bg-white px-5 py-2.5 rounded-2xl text-sm font-bold border border-slate-200 hover:border-[#CC222F] hover:text-[#CC222F] hover:shadow-lg hover:shadow-red-500/5 transition-all"
+              >
+                + {name}
+              </button>
+            ))}
+            {suggestions.length > 15 && <span className="text-xs text-slate-400 flex items-center ml-2">and {suggestions.length - 15} more...</span>}
+          </div>
         </div>
       )}
 

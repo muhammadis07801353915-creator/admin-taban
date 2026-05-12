@@ -1,0 +1,250 @@
+"use client";
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { 
+  Plus, Trash2, Edit2, Loader2, 
+  Image as ImageIcon, Check, X, 
+  ChevronRight, ChevronLeft, Layers, 
+  CheckCircle2, Download, Search
+} from "lucide-react";
+
+const COMMON_BRANDS = ["Toyota", "Honda", "Ford", "Chevrolet", "Nissan", "BMW", "Mercedes-Benz", "Kia", "Hyundai", "Volkswagen", "Audi", "Lexus", "Land Rover", "Jeep", "GMC", "Dodge", "Mazda", "Subaru", "Volvo", "Mitsubishi"].slice(0, 50);
+
+const COMMON_MODELS: Record<string, string[]> = {
+  "Toyota": ["Corolla", "Camry", "RAV4", "Highlander", "Tacoma", "Tundra", "Prius", "Avalon", "Sienna", "4Runner", "Sequoia", "Land Cruiser", "Supra", "GR86", "Venza", "C-HR", "Crown", "Yaris"],
+  "Honda": ["Civic", "Accord", "CR-V", "Pilot", "Odyssey", "Ridgeline", "HR-V", "Passport", "Insight"],
+  "BMW": ["3 Series", "5 Series", "X3", "X5", "7 Series", "X1", "X7", "4 Series", "M3", "M5"]
+};
+
+const COMMON_SPECS = ["SV", "SLE", "SE", "Limited", "Platinum", "Sport", "Touring", "XLE", "SR5", "TRD Off-Road", "Premium", "Base", "Ultimate", "Full Option", "Standard"];
+
+type ViewState = 'brands' | 'models' | 'specs';
+
+export default function BrandsPage() {
+  const [view, setView] = useState<ViewState>('brands');
+  const [selectedBrand, setSelectedBrand] = useState<any>(null);
+  const [selectedModel, setSelectedModel] = useState<any>(null);
+
+  const [brands, setBrands] = useState<any[]>([]);
+  const [models, setModels] = useState<any[]>([]);
+  const [specs, setSpecs] = useState<any[]>([]);
+
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [isEditingLogo, setIsEditingLogo] = useState<any>(null);
+  const [newLogoUrl, setNewLogoUrl] = useState('');
+  const [newItemName, setNewItemName] = useState('');
+
+  useEffect(() => {
+    if (view === 'brands') fetchBrands();
+    else if (view === 'models' && selectedBrand) fetchModels(selectedBrand.id);
+    else if (view === 'specs' && selectedModel) fetchSpecs(selectedModel.id);
+  }, [view, selectedBrand, selectedModel]);
+
+  const fetchBrands = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from('brands').select('*').order('name');
+      if (error) throw error;
+      setBrands(data || []);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  const fetchModels = async (brandId: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from('models').select('*').eq('brand_id', brandId).order('name');
+      if (error) throw error;
+      setModels(data || []);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  const fetchSpecs = async (modelId: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from('specs').select('*').eq('model_id', modelId).order('name');
+      if (error) throw error;
+      setSpecs(data || []);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  const handleBulk = async () => {
+    if (!confirm('Proceed with bulk import?')) return;
+    setLoading(true);
+    try {
+      if (view === 'brands') {
+        const existing = brands.map(b => b.name.toLowerCase());
+        const toAdd = COMMON_BRANDS.filter(b => !existing.includes(b.toLowerCase())).map(name => ({ name }));
+        if (toAdd.length > 0) await supabase.from('brands').insert(toAdd);
+        await fetchBrands();
+      } else if (view === 'models' && selectedBrand) {
+        const list = COMMON_MODELS[selectedBrand.name] || COMMON_MODELS[Object.keys(COMMON_MODELS).find(k => k.toLowerCase() === selectedBrand.name.toLowerCase()) || ''] || [];
+        const existing = models.map(m => m.name.toLowerCase());
+        const toAdd = list.filter(m => !existing.includes(m.toLowerCase())).map(name => ({ name, brand_id: selectedBrand.id }));
+        if (toAdd.length > 0) await supabase.from('models').insert(toAdd);
+        await fetchModels(selectedBrand.id);
+      } else if (view === 'specs' && selectedModel) {
+        const existing = specs.map(s => s.name.toLowerCase());
+        const toAdd = COMMON_SPECS.filter(s => !existing.includes(s.toLowerCase())).map(name => ({ name, model_id: selectedModel.id }));
+        if (toAdd.length > 0) await supabase.from('specs').insert(toAdd);
+        await fetchSpecs(selectedModel.id);
+      }
+    } catch (e) { alert('Error during bulk import'); }
+    finally { setLoading(false); }
+  };
+
+  const handleAdd = async () => {
+    if (!newItemName) return;
+    setLoading(true);
+    try {
+      let res;
+      if (view === 'brands') res = await supabase.from('brands').insert([{ name: newItemName }]);
+      else if (view === 'models') res = await supabase.from('models').insert([{ name: newItemName, brand_id: selectedBrand.id }]);
+      else if (view === 'specs') res = await supabase.from('specs').insert([{ name: newItemName, model_id: selectedModel.id }]);
+      
+      if (res?.error) throw res.error;
+      setNewItemName('');
+      setIsAdding(false);
+      if (view === 'brands') await fetchBrands();
+      else if (view === 'models') await fetchModels(selectedBrand.id);
+      else await fetchSpecs(selectedModel.id);
+    } catch (e) { alert('Error adding item'); }
+    finally { setLoading(false); }
+  };
+
+  const updateLogo = async () => {
+    if (!isEditingLogo) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('brands').update({ image_url: newLogoUrl }).eq('id', isEditingLogo.id);
+      if (error) {
+        if (error.message.includes('image_url')) {
+          alert("Error: The 'brands' table does not have an 'image_url' column. Please add it in Supabase dashboard first.");
+        } else throw error;
+      } else {
+        setBrands(brands.map(b => b.id === isEditingLogo.id ? { ...b, image_url: newLogoUrl } : b));
+        setIsEditingLogo(null);
+        setNewLogoUrl('');
+      }
+    } catch (e) { alert('Error updating logo'); }
+    finally { setLoading(false); }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure?')) return;
+    const table = view === 'brands' ? 'brands' : view === 'models' ? 'models' : 'specs';
+    await supabase.from(table).delete().eq('id', id);
+    if (view === 'brands') fetchBrands();
+    else if (view === 'models') fetchModels(selectedBrand.id);
+    else fetchSpecs(selectedModel.id);
+  };
+
+  const filteredItems = (view === 'brands' ? brands : view === 'models' ? models : specs).filter(item => 
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-8 animate-in slide-in-from-bottom-4">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          {view !== 'brands' && (
+            <button onClick={() => { setView(view === 'specs' ? 'models' : 'brands'); setSearchQuery(''); }} className="bg-slate-100 p-3 rounded-2xl"><ChevronLeft size={24} /></button>
+          )}
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">
+              {view === 'brands' ? 'Brands' : view === 'models' ? `${selectedBrand?.name} Models` : `${selectedModel?.name} Specs`}
+            </h1>
+          </div>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <input placeholder="Search..." className="w-full bg-slate-50 border border-slate-100 h-12 rounded-2xl pl-12 pr-4 font-bold outline-none" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button onClick={handleBulk} className="flex-1 bg-slate-900 text-white h-12 px-6 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-slate-500/20"><Download size={18} /> Bulk</button>
+            <button onClick={() => setIsAdding(true)} className="flex-1 bg-[#CC222F] text-white h-12 px-6 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"><Plus size={18} /> Add</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Breadcrumbs */}
+      {view !== 'brands' && (
+        <div className="flex items-center gap-2 text-sm font-bold">
+          <span className="text-slate-400 cursor-pointer" onClick={() => { setView('brands'); setSearchQuery(''); }}>Brands</span>
+          <ChevronRight size={14} className="text-slate-300" />
+          {view === 'specs' ? (
+            <>
+              <span className="text-slate-400 cursor-pointer" onClick={() => { setView('models'); setSearchQuery(''); }}>{selectedBrand?.name}</span>
+              <ChevronRight size={14} className="text-slate-300" />
+              <span className="text-[#CC222F]">{selectedModel?.name}</span>
+            </>
+          ) : <span className="text-[#CC222F]">{selectedBrand?.name}</span>}
+        </div>
+      )}
+
+      {/* Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+        {loading ? (
+          <div className="col-span-full py-20 flex justify-center"><Loader2 className="animate-spin text-[#CC222F]" size={40} /></div>
+        ) : (
+          filteredItems.map(item => (
+            <div key={item.id} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm relative group cursor-pointer hover:border-[#CC222F] transition-all" onClick={() => {
+              if (view === 'brands') { setSelectedBrand(item); setView('models'); }
+              else if (view === 'models') { setSelectedModel(item); setView('specs'); }
+            }}>
+              <div className="aspect-square bg-slate-50 rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
+                {view === 'brands' && item.image_url ? (
+                  <img src={item.image_url} className="w-16 h-16 object-contain" />
+                ) : (
+                  view === 'brands' ? <ImageIcon size={32} className="text-slate-200" /> : 
+                  view === 'models' ? <Layers size={32} className="text-slate-200" /> : <CheckCircle2 size={32} className="text-slate-200" />
+                )}
+              </div>
+              <p className="text-center font-bold text-slate-900">{item.name}</p>
+              
+              <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                {view === 'brands' && (
+                  <button onClick={(e) => { e.stopPropagation(); setIsEditingLogo(item); setNewLogoUrl(item.image_url || ''); }} className="p-2 text-slate-200 hover:text-blue-500 bg-white/80 rounded-full shadow-sm"><Edit2 size={16} /></button>
+                )}
+                <button onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }} className="p-2 text-slate-200 hover:text-red-500 bg-white/80 rounded-full shadow-sm"><Trash2 size={16} /></button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Modals */}
+      {(isAdding || isEditingLogo) && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-md rounded-[40px] p-8 shadow-2xl animate-in zoom-in-95">
+            <h3 className="text-2xl font-black text-slate-900 mb-6">{isEditingLogo ? 'Edit Logo' : 'Add New'}</h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-500 ml-2">{isEditingLogo ? 'External Image URL' : 'Name'}</label>
+                <input 
+                  autoFocus 
+                  value={isEditingLogo ? newLogoUrl : newItemName} 
+                  onChange={e => isEditingLogo ? setNewLogoUrl(e.target.value) : setNewItemName(e.target.value)} 
+                  className="w-full bg-slate-50 border-none h-14 rounded-2xl px-6 font-bold outline-none" 
+                  placeholder={isEditingLogo ? "https://..." : "Name..."} 
+                />
+              </div>
+              <div className="flex gap-4">
+                <button onClick={isEditingLogo ? updateLogo : handleAdd} className="flex-1 bg-[#CC222F] text-white h-14 rounded-2xl font-black">Save</button>
+                <button onClick={() => { setIsAdding(false); setIsEditingLogo(null); setNewItemName(''); }} className="flex-1 bg-slate-100 text-slate-400 h-14 rounded-2xl font-black">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -34,19 +34,29 @@ export default function AdsPage() {
   }
 
   async function handleAdd() {
-    if (!name || !imageUrl) return;
+    if (!name || !imageUrl) {
+      alert('تکایە هەموو خانەکان پڕ بکەرەوە');
+      return;
+    }
     setSubmitting(true);
     
-    const { error } = await supabase
-      .from('meta_ads')
-      .insert([{ name, image_url: imageUrl, type }]);
+    try {
+      const { error } = await supabase
+        .from('meta_ads')
+        .insert([{ name, image_url: imageUrl, type }]);
 
-    if (!error) {
+      if (error) throw error;
+      
       setName('');
       setImageUrl('');
       fetchAds();
+      alert('ڕیکڵامەکە بە سەرکەوتوویی بڵاوکرایەوە');
+    } catch (error: any) {
+      console.error(error);
+      alert('هەڵەیەک ڕوویدا لە کاتی بڵاوکردنەوە: ' + error.message);
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   }
 
   async function handleDelete(id: string) {

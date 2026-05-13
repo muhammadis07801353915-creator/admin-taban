@@ -31,7 +31,17 @@ const COMMON_MODELS: Record<string, string[]> = {
   "Mazda": ["2", "3", "6", "CX-3", "CX-30", "CX-5", "CX-9", "MX-5"],
   "Subaru": ["Impreza", "Legacy", "Forester", "Outback", "XV", "WRX", "BRZ"],
   "Volvo": ["S60", "S90", "V60", "V90", "XC40", "XC60", "XC90"],
-  "Mitsubishi": ["Mirage", "Lancer", "ASX", "Outlander", "Pajero", "L200"]
+  "Mitsubishi": ["Mirage", "Lancer", "ASX", "Outlander", "Pajero", "L200"],
+  "Chery": ["Tiggo 2", "Tiggo 3", "Tiggo 4", "Tiggo 7", "Tiggo 8", "Arrizo 5", "Arrizo 6", "Omoda 5", "EQ1", "EQ5", "Tiggo 5x", "Tiggo 3xe", "Tiggo e", "Arrizo GX", "Arrizo 5 Plus", "Arrizo 5 Pro", "Tiggo 8 Plus", "Tiggo 8 Pro", "Tiggo 7 Pro", "Tiggo 4 Pro", "E3", "E5", "Fulwin 2", "QQ", "QQ3", "QQ6"],
+  "Great Wall / Haval": ["H6", "Jolion", "H9", "Dargo", "F7", "F7x", "H2", "H4", "M6", "Big Dog", "Shenshou", "Chitu", "Cool Dog", "Poer", "Cannon", "Steed", "Wingle 7", "Tank 300", "Tank 500", "Ora Good Cat"],
+  "Infiniti": ["Q50", "Q60", "Q70", "QX30", "QX50", "QX55", "QX60", "QX70", "QX80", "G35", "G37", "M35", "M37", "EX35", "FX35", "FX50", "JX35", "Q45", "I30", "I35"],
+  "Jetour": ["X70", "X70 Plus", "X70 Coupe", "X70M", "X70S", "X90", "X90 Plus", "X95", "Dashing", "Traveler", "T-1", "Ice Cream"],
+  "MG": ["MG3", "MG5", "MG6", "MG ZS", "MG ZS EV", "MG HS", "MG EHS", "MG RX5", "MG RX8", "MG GT", "MG4 EV", "MG5 EV", "MG Marvel R", "MG One", "MG Hector", "MG Gloster", "MG Astor", "MG Mulan", "MG Cyberster"],
+  "Peugeot": ["108", "208", "308", "408", "508", "2008", "3008", "4008", "5008", "RCZ", "Partner", "Rifter", "Expert", "Traveller", "Boxer", "301", "107", "207", "206", "407"],
+  "Porsche": ["911 Carrera", "911 Targa", "911 Turbo", "911 GT3", "718 Boxster", "718 Cayman", "718 Spyder", "Panamera", "Panamera Sport Turismo", "Macan", "Macan S", "Macan GTS", "Cayenne", "Cayenne Coupe", "Taycan", "Taycan Cross Turismo", "Taycan Sport Turismo", "918 Spyder", "Carrera GT"],
+  "Renault": ["Clio", "Megane", "Megane E-Tech", "Talisman", "Captur", "Kadjar", "Koleos", "Arkana", "Zoe", "Twingo", "Scenic", "Grand Scenic", "Espace", "Kangoo", "Trafic", "Master", "Duster", "Kwid", "Sandero", "Logan"],
+  "Suzuki": ["Swift", "Swift Sport", "Vitara", "Grand Vitara", "Jimny", "Baleno", "Ciaz", "Ertiga", "Dzire", "SX4 S-Cross", "Ignis", "Alto", "Celerio", "Wagon R", "S-Presso", "Carry", "APV"],
+  "Tesla": ["Model S", "Model 3", "Model X", "Model Y", "Cybertruck", "Roadster", "Semi"]
 };
 
 const COMMON_SPECS = ["Standard", "Full Option", "Half Option", "Base"];

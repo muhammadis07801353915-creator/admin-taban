@@ -11,7 +11,8 @@ import {
   ShieldCheck,
   AlertCircle,
   MoreVertical,
-  Trash2
+  Trash2,
+  XSquare
 } from "lucide-react";
 import { format, isAfter, parseISO } from "date-fns";
 
@@ -66,7 +67,8 @@ export default function CompaniesPage() {
         .from("showrooms")
         .update({ 
           is_verified: !currentStatus,
-          verified_until: expiryDate 
+          verified_until: expiryDate,
+          status: !currentStatus ? 'approved' : 'pending'
         })
         .eq("id", id);
 
@@ -83,6 +85,17 @@ export default function CompaniesPage() {
     if (!confirm("Are you sure you want to delete this account?")) return;
     
     const { error } = await supabase.from("showrooms").delete().eq("id", id);
+    if (!error) fetchShowrooms();
+  }
+
+  async function rejectShowroom(id: string) {
+    if (!confirm("Are you sure you want to reject this account?")) return;
+    
+    const { error } = await supabase
+      .from("showrooms")
+      .update({ status: 'rejected', is_verified: false })
+      .eq("id", id);
+    
     if (!error) fetchShowrooms();
   }
 
@@ -215,7 +228,12 @@ export default function CompaniesPage() {
                             >
                               {isActive ? "REVOKE ACCESS" : "GRANT ACCESS"}
                             </button>
-                            <button onClick={() => deleteShowroom(s.id)} className="p-3 text-slate-300 hover:text-red-500 transition-colors">
+                            {s.status === 'pending' && (
+                              <button onClick={() => rejectShowroom(s.id)} className="p-3 text-slate-300 hover:text-orange-500 transition-colors" title="Reject">
+                                <XSquare size={20} />
+                              </button>
+                            )}
+                            <button onClick={() => deleteShowroom(s.id)} className="p-3 text-slate-300 hover:text-red-500 transition-colors" title="Delete">
                               <Trash2 size={20} />
                             </button>
                           </div>

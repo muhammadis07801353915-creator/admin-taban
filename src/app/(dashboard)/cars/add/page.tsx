@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { 
@@ -24,7 +24,8 @@ export default function AddCarPage() {
     model: '',
     year: '',
     price: '',
-    city: 'Erbil',
+    governorate: '',
+    city: '',
     transmission: 'Automatic',
     fuel_type: 'Benzene',
     color: '',
@@ -33,7 +34,40 @@ export default function AddCarPage() {
     description: '',
   });
 
+  const [governorates, setGovernorates] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchGovernorates = async () => {
+      try {
+        const { data } = await supabase.from('governorates').select('*').order('name');
+        if (data) {
+          setGovernorates(data);
+        }
+      } catch (err) {
+        console.error("Error loading governorates", err);
+      }
+    };
+    fetchGovernorates();
+  }, []);
+
+  const handleGovernorateChange = async (govId: string, govName: string) => {
+    setFormData(prev => ({ ...prev, governorate: govName, city: '' }));
+    try {
+      const { data } = await supabase.from('cities').select('*').eq('governorate_id', govId).order('name');
+      if (data) {
+        setCities(data);
+      }
+    } catch (err) {
+      console.error("Error loading cities", err);
+    }
+  };
+
   const handleSubmit = async () => {
+    if (!formData.governorate || !formData.city) {
+      alert('Please select both Governorate and City');
+      return;
+    }
     setLoading(true);
     try {
       const { error } = await supabase
@@ -45,6 +79,7 @@ export default function AddCarPage() {
             year: parseInt(formData.year),
             price: parseFloat(formData.price),
             city: formData.city,
+            governorate: formData.governorate,
             transmission: formData.transmission,
             fuel_type: formData.fuel_type,
             color: formData.color,
@@ -188,17 +223,42 @@ export default function AddCarPage() {
               <h3 className="text-xl font-bold text-slate-900">Final Details</h3>
             </div>
             <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Location (City)</label>
-                <select 
-                  className="w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-[#CC222F]/20"
-                  value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})}
-                >
-                  <option>Erbil</option>
-                  <option>Sulaymaniyah</option>
-                  <option>Duhok</option>
-                  <option>Baghdad</option>
-                </select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Governorate (پارێزگا)</label>
+                  <select 
+                    className="w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-[#CC222F]/20 text-slate-800"
+                    value={governorates.find(g => g.name === formData.governorate)?.id || ''}
+                    onChange={(e) => {
+                      const selectedGov = governorates.find(g => g.id.toString() === e.target.value);
+                      if (selectedGov) {
+                        handleGovernorateChange(selectedGov.id, selectedGov.name);
+                      } else {
+                        setFormData(prev => ({ ...prev, governorate: '', city: '' }));
+                        setCities([]);
+                      }
+                    }}
+                  >
+                    <option value="">Select Governorate...</option>
+                    {governorates.map((gov) => (
+                      <option key={gov.id} value={gov.id}>{gov.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">City / District (شار / قەزا)</label>
+                  <select 
+                    className="w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-[#CC222F]/20 text-slate-800"
+                    value={formData.city}
+                    onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                    disabled={!formData.governorate}
+                  >
+                    <option value="">Select City...</option>
+                    {cities.map((city) => (
+                      <option key={city.id} value={city.name}>{city.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700">Description (Optional)</label>

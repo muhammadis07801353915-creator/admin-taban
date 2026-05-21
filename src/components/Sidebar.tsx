@@ -11,7 +11,10 @@ import {
   LogOut,
   ChevronRight,
   Layers,
-  Image as ImageIcon
+  Image as ImageIcon,
+  CreditCard,
+  BarChart3,
+  MapPin
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -22,10 +25,13 @@ function cn(...inputs: ClassValue[]) {
 
 const menuItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Data & Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Car Listings", href: "/cars", icon: Car },
   { name: "Ads & Banners", href: "/ads", icon: ImageIcon },
   { name: "Brands & Models", href: "/brands", icon: Layers },
   { name: "App Content (CMS)", href: "/content", icon: Layers },
+  { name: "Payments & Ads", href: "/payments", icon: CreditCard },
+  { name: "Locations", href: "/locations", icon: MapPin },
   { name: "Showrooms", href: "/companies", icon: Building2 },
   { name: "Users", href: "/users", icon: Users },
   { name: "Settings", href: "/settings", icon: Settings },

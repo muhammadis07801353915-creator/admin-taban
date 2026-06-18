@@ -43,11 +43,11 @@ export default function PaymentsPage() {
       const { data: settings } = await supabase.from('app_settings').select('vip_plan_enabled').eq('id', 1).single();
       if (settings) setVipEnabled(settings.vip_plan_enabled ?? true);
 
-      // Fetch VIP cars
+      // Fetch all pending + VIP cars
       const { data, error } = await supabase
         .from('cars')
         .select('*')
-        .eq('vip_plan', true)
+        .or('vip_plan.eq.true,status.eq.pending')
         .order('created_at', { ascending: false });
 
       if (!error && data) setVipCars(data as VipCar[]);

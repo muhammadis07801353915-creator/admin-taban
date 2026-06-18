@@ -102,6 +102,8 @@ export default function PaymentsPage() {
   // Detail view
   if (selected) {
     const isBalance = selected.payment_type === 'balance';
+    const isCard = selected.payment_type === 'card';
+    const isUnknown = !selected.payment_type;
     const isPending = selected.status === 'pending';
     return (
       <div className="p-8 max-w-3xl mx-auto" dir="rtl">
@@ -127,9 +129,9 @@ export default function PaymentsPage() {
 
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-slate-900 rounded-2xl p-4">
-              <p className="text-slate-400 text-sm mb-1">شێوازی پارەدان</p>
+              <p className="text-slate-400 text-sm mb-1">شێوازی پاڕەدان</p>
               <p className="text-white font-bold text-lg">
-                {isBalance ? '📲 باڵانس' : '🖼️ وێنەی کارت'}
+                {isBalance ? '📲 باڵانس' : isCard ? '🖼️ وێنەی کارت' : '⚠️ نازانرێت - پێشتر بزانە'}
               </p>
             </div>
             <div className="bg-slate-900 rounded-2xl p-4">
@@ -140,9 +142,14 @@ export default function PaymentsPage() {
             </div>
           </div>
 
-          {isBalance ? (
+          {isUnknown ? (
+            <div className="bg-slate-700/50 border border-slate-600 rounded-2xl p-5 text-center">
+              <p className="text-slate-300 font-bold text-lg mb-2">⚠️ زانیاریی پاڕەدان تۆمار نەکراوە</p>
+              <p className="text-slate-400 text-sm">ئەم ۆتۆمبیڵە کاتێک ستوونەکانی VIP لە داتابەیس نەبوون تۆمار کرا. تکایە بە ژمارەی بەکارهێنەر پەیوەندیبکەرەوەیە وی لەگەڵ بزانیتە چۆن پاڕەکەی ناردووە.</p>
+            </div>
+          ) : isBalance ? (
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-5">
-              <p className="text-blue-300 font-bold mb-2">پارەی باڵانس نێرا بۆ:</p>
+              <p className="text-blue-300 font-bold mb-2">پاڕەی باڵانس نێرا بۆ:</p>
               <p className="text-white font-black text-xl" dir="ltr">
                 {selected.payment_method === 'korek' ? `*215*[ژمارەی تۆ]*10000#` : `*123*10000*[ژمارەی تۆ]#`}
               </p>

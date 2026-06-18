@@ -137,7 +137,11 @@ export default function PaymentsPage() {
             <div className="bg-slate-900 rounded-2xl p-4">
               <p className="text-slate-400 text-sm mb-1">کۆمپانیا</p>
               <p className="text-white font-bold text-lg capitalize">
-                {selected.payment_method === 'korek' ? '🔵 کۆرەک' : selected.payment_method === 'asiacell' ? '🔴 ئاسیاسێل' : selected.payment_method || '-'}
+                {selected.payment_method === 'korek' ? '🔵 کۆرەک' : 
+                 selected.payment_method === 'asiacell' ? '🔴 ئاسیاسێل' : 
+                 selected.payment_method === 'fastpay' ? '💖 FastPay' :
+                 selected.payment_method === 'fib' ? '💠 FIB' :
+                 selected.payment_method || '-'}
               </p>
             </div>
           </div>

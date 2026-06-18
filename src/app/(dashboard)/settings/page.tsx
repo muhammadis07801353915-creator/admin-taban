@@ -11,6 +11,8 @@ export default function SettingsPage() {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [korekNumber, setKorekNumber] = useState('');
   const [asiacellNumber, setAsiacellNumber] = useState('');
+  const [fastpayNumber, setFastpayNumber] = useState('');
+  const [fibNumber, setFibNumber] = useState('');
 
   useEffect(() => {
     fetchSettings();
@@ -29,6 +31,8 @@ export default function SettingsPage() {
         if (data.whatsapp_number) setWhatsappNumber(data.whatsapp_number);
         if (data.korek_number) setKorekNumber(data.korek_number);
         if (data.asiacell_number) setAsiacellNumber(data.asiacell_number);
+        if (data.fastpay_number) setFastpayNumber(data.fastpay_number);
+        if (data.fib_number) setFibNumber(data.fib_number);
       }
     } catch (e) {
       console.error(e);
@@ -62,7 +66,9 @@ export default function SettingsPage() {
         .from('app_settings')
         .update({ 
           korek_number: korekNumber,
-          asiacell_number: asiacellNumber 
+          asiacell_number: asiacellNumber,
+          fastpay_number: fastpayNumber,
+          fib_number: fibNumber
         })
         .eq('id', 1);
         
@@ -171,6 +177,36 @@ export default function SettingsPage() {
                 dir="ltr"
               />
               <p className="text-slate-500 text-xs mt-1 text-left" dir="ltr">کۆد: *123*10000*{asiacellNumber || '0770XXXXXXX'}#</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-300 mb-2">
+                <span className="inline-block w-3 h-3 bg-pink-500 rounded-full mr-2"></span>
+                ژمارەی FastPay
+              </label>
+              <input 
+                type="text" 
+                value={fastpayNumber}
+                onChange={(e) => setFastpayNumber(e.target.value)}
+                placeholder="0750XXXXXXX"
+                className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-3 text-left"
+                dir="ltr"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-300 mb-2">
+                <span className="inline-block w-3 h-3 bg-cyan-500 rounded-full mr-2"></span>
+                ژمارەی FIB
+              </label>
+              <input 
+                type="text" 
+                value={fibNumber}
+                onChange={(e) => setFibNumber(e.target.value)}
+                placeholder="0750XXXXXXX"
+                className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-3 text-left"
+                dir="ltr"
+              />
             </div>
 
             <button 

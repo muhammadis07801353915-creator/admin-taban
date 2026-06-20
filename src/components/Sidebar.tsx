@@ -14,7 +14,8 @@ import {
   Image as ImageIcon,
   CreditCard,
   BarChart3,
-  MapPin
+  MapPin,
+  MessageSquare
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -34,6 +35,7 @@ const menuItems = [
   { name: "Locations", href: "/locations", icon: MapPin },
   { name: "Showrooms", href: "/companies", icon: Building2 },
   { name: "Users", href: "/users", icon: Users },
+  { name: "Support Chats", href: "/support", icon: MessageSquare },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

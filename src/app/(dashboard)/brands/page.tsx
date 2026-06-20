@@ -9,7 +9,51 @@ import {
   CheckCircle2, Download, Search
 } from "lucide-react";
 
-const COMMON_BRANDS = ["Toyota", "Honda", "Ford", "Chevrolet", "Nissan", "BMW", "Mercedes-Benz", "Kia", "Hyundai", "Volkswagen", "Audi", "Lexus", "Land Rover", "Jeep", "GMC", "Dodge", "Mazda", "Subaru", "Volvo", "Mitsubishi"].slice(0, 50);
+const COMMON_BRANDS = [
+  "Toyota", "Honda", "Ford", "Chevrolet", "Nissan", "BMW", "Mercedes-Benz", "Kia",
+  "Hyundai", "Volkswagen", "Audi", "Lexus", "Land Rover", "Jeep", "GMC", "Dodge",
+  "Mazda", "Subaru", "Volvo", "Mitsubishi",
+  // New brands
+  "Jaguar", "GAC", "Opel", "Chrysler", "Bentley", "Isuzu", "Smart", "Bestune", "Avatr", "JAC", "Skoda", "Daimon", "Mini"
+];
+
+// Default logo URLs for brands (used when bulk-importing brands)
+const BRAND_LOGOS: Record<string, string> = {
+  "Toyota": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Toyota_carlogo.svg/1200px-Toyota_carlogo.svg.png",
+  "Honda": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Honda.svg/1200px-Honda.svg.png",
+  "BMW": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/BMW.svg/1200px-BMW.svg.png",
+  "Mercedes-Benz": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Mercedes-Logo.svg/1200px-Mercedes-Logo.svg.png",
+  "Audi": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Audi-Logo_2016.svg/1200px-Audi-Logo_2016.svg.png",
+  "Ford": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Ford_logo_flat.svg/1200px-Ford_logo_flat.svg.png",
+  "Chevrolet": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/2020_Chevrolet_Tahoe_LT_%2842898989375%29.png/1200px-2020_Chevrolet_Tahoe_LT_%2842898989375%29.png",
+  "Nissan": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Nissan_2020_logo.svg/1200px-Nissan_2020_logo.svg.png",
+  "Kia": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Kia-logo.svg/1200px-Kia-logo.svg.png",
+  "Hyundai": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Hyundai_Motor_Company_logo.svg/1200px-Hyundai_Motor_Company_logo.svg.png",
+  "Volkswagen": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Volkswagen_logo_2019.svg/1200px-Volkswagen_logo_2019.svg.png",
+  "Lexus": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Lexus_division_emblem.svg/1200px-Lexus_division_emblem.svg.png",
+  "Land Rover": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Land_Rover_logo.svg/1200px-Land_Rover_logo.svg.png",
+  "Jeep": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Jeep_logo.svg/1200px-Jeep_logo.svg.png",
+  "GMC": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/GMC_logo_2020.svg/1200px-GMC_logo_2020.svg.png",
+  "Dodge": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Dodge_logo_-_SRT.svg/1200px-Dodge_logo_-_SRT.svg.png",
+  "Mazda": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Mazda_logo.svg/1200px-Mazda_logo.svg.png",
+  "Subaru": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Subaru_logo.svg/1200px-Subaru_logo.svg.png",
+  "Volvo": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Volvo_wordmark.svg/1200px-Volvo_wordmark.svg.png",
+  "Mitsubishi": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Mitsubishi_logo.svg/1200px-Mitsubishi_logo.svg.png",
+  // New brands
+  "Jaguar": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Jaguar_Cars_logo.svg/1200px-Jaguar_Cars_logo.svg.png",
+  "GAC": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/GAC_Group_logo.svg/1200px-GAC_Group_logo.svg.png",
+  "Opel": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Opel_logo_2021.svg/1200px-Opel_logo_2021.svg.png",
+  "Chrysler": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Chrysler_logo.svg/1200px-Chrysler_logo.svg.png",
+  "Bentley": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Bentley_logo.svg/1200px-Bentley_logo.svg.png",
+  "Isuzu": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Isuzu_logo.svg/1200px-Isuzu_logo.svg.png",
+  "Smart": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Smart_logo_2020.svg/1200px-Smart_logo_2020.svg.png",
+  "Bestune": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Bestune_logo_2020.svg/1200px-Bestune_logo_2020.svg.png",
+  "Avatr": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Avatr_Technology_logo.svg/1200px-Avatr_Technology_logo.svg.png",
+  "JAC": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/JAC_Motors_logo.svg/1200px-JAC_Motors_logo.svg.png",
+  "Vauxhall": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Vauxhall-logo.svg/1200px-Vauxhall-logo.svg.png",
+  "Skoda": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Skoda_logo_2016.svg/1200px-Skoda_logo_2016.svg.png",
+  "Daimon": "",
+};
 
 const COMMON_MODELS: Record<string, string[]> = {
   "Toyota": ["Camry", "Corolla", "RAV4", "Highlander", "Tacoma", "Tundra", "Prius", "Avalon", "Sienna", "4Runner", "Sequoia", "Land Cruiser", "Supra", "GR86", "Venza", "C-HR", "Crown", "Yaris", "FJ Cruiser", "Land Cruiser Prado"],
@@ -43,7 +87,21 @@ const COMMON_MODELS: Record<string, string[]> = {
   "Porsche": ["911 Carrera", "911 Targa", "911 Turbo", "911 GT3", "718 Boxster", "718 Cayman", "718 Spyder", "Panamera", "Panamera Sport Turismo", "Macan", "Macan S", "Macan GTS", "Cayenne", "Cayenne Coupe", "Taycan", "Taycan Cross Turismo", "Taycan Sport Turismo", "918 Spyder", "Carrera GT"],
   "Renault": ["Clio", "Megane", "Megane E-Tech", "Talisman", "Captur", "Kadjar", "Koleos", "Arkana", "Zoe", "Twingo", "Scenic", "Grand Scenic", "Espace", "Kangoo", "Trafic", "Master", "Duster", "Kwid", "Sandero", "Logan"],
   "Suzuki": ["Swift", "Swift Sport", "Vitara", "Grand Vitara", "Jimny", "Baleno", "Ciaz", "Ertiga", "Dzire", "SX4 S-Cross", "Ignis", "Alto", "Celerio", "Wagon R", "S-Presso", "Carry", "APV"],
-  "Tesla": ["Model S", "Model S Plaid", "Model 3", "Model 3 Highland", "Model X", "Model X Plaid", "Model Y", "Cybertruck", "Roadster", "Semi"]
+  "Tesla": ["Model S", "Model S Plaid", "Model 3", "Model 3 Highland", "Model X", "Model X Plaid", "Model Y", "Cybertruck", "Roadster", "Semi"],
+  // New brands
+  "Jaguar": ["E-Pace", "XJ", "XF", "S-Type", "XK", "XE", "X-Type", "F-Pace", "I-Pace", "F-Type"],
+  "GAC": ["GS3", "GS4", "GS4 Max", "GS5", "GS7", "GS8", "GS8 Traveller", "GA3", "GA4", "GA5", "GA6", "GA8", "GN6", "GN8", "Empow", "Empow R", "Emkoo", "Emzoom", "Gonow M1", "Gonow GA200", "Gonow GA1030", "M8", "Aion ES"],
+  "Opel": ["Astra", "Astra GTC", "Astra OPC", "Antara", "Zafira", "Meriva", "Vectra", "Insignia", "Adam", "Corsa OPC", "Corsa", "Mokka", "Grandland X", "Combo", "Omega", "Crossland", "Calibra", "Kadett", "Monterey", "Senator"],
+  "Chrysler": ["300", "PT Cruiser", "Pacifica", "Grand Voyager", "200", "Sebring", "Crossfire", "Town and Country", "New Yorker", "Concorde", "Grand Caravan", "300M", "Voyager", "Saratoga", "Aspen"],
+  "Bentley": ["Continental GTC", "Azure", "Continental GT", "Brooklands", "Continental", "Flying Spur", "Mulsanne", "Arnage", "Bentayga"],
+  "Isuzu": ["D-Max", "MU-X", "Trooper", "Rodeo", "Elf", "Faster"],
+  "Smart": ["Fortwo", "Smart #1"],
+  "Bestune": ["B70", "T99", "T77", "B70S", "T55", "Pony", "E07"],
+  "Avatr": ["Avatr 11", "Avatr 12"],
+  "JAC": ["JS6", "298", "JS4", "T8", "JS3", "J4", "J6", "J5", "M5 MPV", "S3 SUV", "J3", "HFC", "X200"],
+  "Skoda": ["Roomster", "Octavia", "Kodiaq", "Superb", "Fabia", "Yeti", "Rapid", "Kushaq"],
+  "Mini": ["Roadster", "Clubman", "Cooper", "Countryman", "Paceman"],
+  "Daimon": []
 };
 
 const COMMON_SPECS = ["Standard", "Full Option", "Half Option", "Base"];
@@ -449,7 +507,10 @@ export default function BrandsPage() {
     try {
       if (view === 'brands') {
         const existing = brands.map(b => b.name.toLowerCase());
-        const toAdd = COMMON_BRANDS.filter(b => !existing.includes(b.toLowerCase())).map(name => ({ name }));
+        const toAdd = COMMON_BRANDS.filter(b => !existing.includes(b.toLowerCase())).map(name => ({
+          name,
+          image_url: BRAND_LOGOS[name] || null
+        }));
         if (toAdd.length > 0) await supabase.from('brands').insert(toAdd);
         await fetchBrands();
       } else if (view === 'models' && selectedBrand) {

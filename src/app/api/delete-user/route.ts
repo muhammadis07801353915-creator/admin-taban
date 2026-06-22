@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -14,11 +15,17 @@ export async function DELETE(req: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+    console.log('URL:', supabaseUrl ? 'set' : 'missing');
+    console.log('KEY:', serviceKey ? 'set (len=' + serviceKey.length + ')' : 'missing');
+
     if (!supabaseUrl || !serviceKey) {
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+      return NextResponse.json({
+        error: 'Server configuration error',
+        debug: { url: !!supabaseUrl, key: !!serviceKey }
+      }, { status: 500 });
     }
 
-    // Create admin client inside handler (runtime only, not build time)
+    // Create admin client inside handler
     const adminSupabase = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     });

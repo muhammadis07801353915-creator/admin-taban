@@ -78,7 +78,7 @@ const COMMON_MODELS: Record<string, string[]> = {
   "Mitsubishi": ["Mirage", "Mirage G4", "Lancer", "Lancer Evolution", "Galant", "ASX", "Eclipse Cross", "Outlander", "Outlander PHEV", "Pajero", "Pajero Sport", "L200", "Triton", "Delica", "Colt", "Grandis", "RVR", "3000GT", "Space Star", "Xpander"],
   "Cadillac": ["ATS", "CT4", "CT5", "CT6", "CTS", "DTS", "Escalade", "Escalade ESV", "SRX", "XT4", "XT5", "XT6", "XTS", "Lyriq", "Celestiq", "Optiq", "STS", "DeVille", "Eldorado", "Fleetwood"],
   "Changan": ["CS15", "CS35", "CS35 Plus", "CS55", "CS55 Plus", "CS75", "CS75 Plus", "CS85", "CS95", "Alsvin", "Eado", "Eado Plus", "Raeton", "Hunter", "Uni-T", "Uni-K", "Uni-V", "Uni-Z", "Deepal S7", "Deepal L7", "Lumin EV", "Auchan X5", "Auchan X7"],
-  "Chery": ["Tiggo 2", "Tiggo 3", "Tiggo 4", "Tiggo 5", "Tiggo 5x", "Tiggo 7", "Tiggo 7 Pro", "Tiggo 8", "Tiggo 8 Plus", "Tiggo 8 Pro", "Tiggo 4 Pro", "Arrizo 3", "Arrizo 5", "Arrizo 5 Plus", "Arrizo 5 Pro", "Arrizo 6", "Arrizo 7", "Arrizo GX", "Omoda 5", "EQ1", "EQ5", "QQ", "QQ6", "Fulwin 2"],
+  "Shery": ["Tiggo 2", "Tiggo 3", "Tiggo 4", "Tiggo 5", "Tiggo 5x", "Tiggo 7", "Tiggo 7 Pro", "Tiggo 8", "Tiggo 8 Plus", "Tiggo 8 Pro", "Tiggo 4 Pro", "Arrizo 3", "Arrizo 5", "Arrizo 5 Plus", "Arrizo 5 Pro", "Arrizo 6", "Arrizo 7", "Arrizo GX", "Omoda 5", "EQ1", "EQ5", "QQ", "QQ6", "Fulwin 2"],
   "Great Wall / Haval": ["H6", "Jolion", "H9", "Dargo", "F7", "F7x", "H2", "H4", "M6", "Big Dog", "Shenshou", "Chitu", "Cool Dog", "Poer", "Cannon", "Steed", "Wingle 7", "Tank 300", "Tank 500", "Ora Good Cat"],
   "Infiniti": ["Q50", "Q60", "Q70", "QX30", "QX50", "QX55", "QX60", "QX70", "QX80", "G35", "G37", "M35", "M37", "EX35", "FX35", "FX50", "JX35", "Q45", "I30", "I35"],
   "Jetour": ["X70", "X70 Plus", "X70 Coupe", "X70M", "X70S", "X90", "X90 Plus", "X95", "Dashing", "Traveler", "T-1", "Ice Cream"],
@@ -383,7 +383,7 @@ const MODEL_SPECS: Record<string, string[]> = {
   "QX80": ["Luxe","Premium Select","Sensory","Autograph"],
   "QX55": ["Pure","Luxe","Sensory"],
 
-  // Chery
+  // Shery
   "Tiggo 8 Pro": ["Comfort","Luxury","Supreme","Premium"],
   "Tiggo 8 Plus": ["Comfort","Luxury","Supreme"],
   "Tiggo 7 Pro": ["Comfort","Luxury","Supreme"],

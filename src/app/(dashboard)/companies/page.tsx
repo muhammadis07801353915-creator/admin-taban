@@ -82,10 +82,23 @@ export default function CompaniesPage() {
   }
 
   async function deleteShowroom(id: string) {
-    if (!confirm("Are you sure you want to delete this account?")) return;
+    if (!confirm("Are you sure you want to completely delete this showroom and all its data? The user will have to create a new account.")) return;
     
-    const { error } = await supabase.from("showrooms").delete().eq("id", id);
-    if (!error) fetchShowrooms();
+    try {
+      const res = await fetch('/api/delete-user', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: id })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete showroom');
+      
+      alert('Showroom and all associated data completely deleted.');
+      fetchShowrooms();
+    } catch (err: any) {
+      alert("Error deleting showroom: " + err.message);
+    }
   }
 
   async function rejectShowroom(id: string) {

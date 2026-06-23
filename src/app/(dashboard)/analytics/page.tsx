@@ -13,7 +13,6 @@ interface CarData {
   model: string;
   year: string;
   price: number;
-  currency: string;
   status: string;
   views: number;
   images: string[];
@@ -58,13 +57,16 @@ export default function AnalyticsPage() {
     try {
       setLoading(true);
 
-      // Fetch ALL cars (no limit)
-      const { data: carData } = await supabase
+      const { data: carData, error: carError } = await supabase
         .from('cars')
-        .select('id, brand, model, year, price, currency, status, views, images, image_urls, created_at, city')
+        .select('id, brand, model, year, price, status, views, images, image_urls, created_at, city')
         .order('views', { ascending: false });
 
-      if (carData) setCars(carData);
+      if (carError) {
+        console.error("Supabase Error fetching cars:", carError.message);
+      } else if (carData) {
+        setCars(carData);
+      }
 
       // Fetch app visits
       const { data: visitData } = await supabase
@@ -363,7 +365,7 @@ export default function AnalyticsPage() {
                   </td>
                   <td className="px-6 py-4 text-slate-600 text-sm">{car.city || '—'}</td>
                   <td className="px-6 py-4 font-bold text-[#CC222F] text-sm">
-                    {car.price?.toLocaleString()} <span className="text-xs font-normal text-slate-400">{car.currency}</span>
+                    {car.price?.toLocaleString()} <span className="text-xs font-normal text-slate-400">IQD</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${

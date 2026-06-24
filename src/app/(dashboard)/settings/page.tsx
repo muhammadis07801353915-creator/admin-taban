@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Settings as SettingsIcon, Phone, Database, CreditCard } from "lucide-react";
+import { Settings as SettingsIcon, Phone, Database, CreditCard, Clock } from "lucide-react";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -13,6 +13,7 @@ export default function SettingsPage() {
   const [asiacellNumber, setAsiacellNumber] = useState('');
   const [fastpayNumber, setFastpayNumber] = useState('');
   const [fibNumber, setFibNumber] = useState('');
+  const [soldRetentionDays, setSoldRetentionDays] = useState('7');
 
   useEffect(() => {
     fetchSettings();
@@ -33,6 +34,7 @@ export default function SettingsPage() {
         if (data.asiacell_number) setAsiacellNumber(data.asiacell_number);
         if (data.fastpay_number) setFastpayNumber(data.fastpay_number);
         if (data.fib_number) setFibNumber(data.fib_number);
+        if (data.sold_retention_days !== undefined) setSoldRetentionDays(data.sold_retention_days.toString());
       }
     } catch (e) {
       console.error(e);
@@ -46,7 +48,10 @@ export default function SettingsPage() {
     try {
       const { error } = await supabase
         .from('app_settings')
-        .update({ whatsapp_number: whatsappNumber })
+        .update({ 
+          whatsapp_number: whatsappNumber,
+          sold_retention_days: parseInt(soldRetentionDays) || 7
+        })
         .eq('id', 1);
         
       if (error) throw error;
@@ -127,9 +132,44 @@ export default function SettingsPage() {
             <button 
               onClick={handleSave}
               disabled={saving}
-              className="w-full bg-[#CC222F] text-white font-bold py-3 rounded-xl hover:bg-[#b3191f] transition-all disabled:opacity-50"
+              className="w-full bg-[#CC222F] text-white font-bold py-3 mt-2 rounded-xl hover:bg-[#b3191f] transition-all disabled:opacity-50"
             >
               {saving ? 'خەزن دەکرێت...' : 'پاشەکەوتکردن'}
+            </button>
+          </div>
+        </div>
+
+        {/* Retention Settings */}
+        <div className="bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-sm flex flex-col gap-5">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center">
+              <Clock className="w-6 h-6 text-blue-500" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg text-white mb-1">ڕێکخستنی کات</h3>
+              <p className="text-slate-400 text-sm">ماوەی مانەوەی ئۆتۆمبێلە فرۆشراوەکان لە ئەپەکەدا.</p>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-300 mb-2">ڕۆژەکانی مانەوەی پۆستی فرۆشراو</label>
+              <input 
+                type="number" 
+                value={soldRetentionDays}
+                onChange={(e) => setSoldRetentionDays(e.target.value)}
+                placeholder="7"
+                className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-3 text-left"
+                dir="ltr"
+              />
+              <p className="text-slate-500 text-xs mt-1">سەیارە فرۆشراوەکان تا ئەم چەند ڕۆژە لە لاپەڕەی سەرەکی دەمێننەوە</p>
+            </div>
+            <button 
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full bg-blue-600 text-white font-bold py-3 mt-2 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50"
+            >
+              {saving ? 'خەزن دەکرێت...' : 'پاشەکەوتکردنی کات'}
             </button>
           </div>
         </div>

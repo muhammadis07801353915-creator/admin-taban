@@ -15,7 +15,8 @@ import {
   CreditCard,
   BarChart3,
   MapPin,
-  MessageSquare
+  MessageSquare,
+  Bell
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -36,6 +37,7 @@ const menuItems = [
   { name: "Showrooms", href: "/companies", icon: Building2 },
   { name: "Users", href: "/users", icon: Users },
   { name: "Support Chats", href: "/support", icon: MessageSquare },
+  { name: "Notifications", href: "/notifications", icon: Bell },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

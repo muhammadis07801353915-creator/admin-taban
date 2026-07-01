@@ -16,6 +16,7 @@ export default function AdsPage() {
   // Form State
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [link, setLink] = useState('');
   const [type, setType] = useState<'slider' | 'banner'>('slider');
 
   useEffect(() => {
@@ -43,12 +44,13 @@ export default function AdsPage() {
     try {
       const { error } = await supabase
         .from('meta_ads')
-        .insert([{ name, image_url: imageUrl, type }]);
+        .insert([{ name, image_url: imageUrl, type, link }]);
 
       if (error) throw error;
       
       setName('');
       setImageUrl('');
+      setLink('');
       fetchAds();
       alert('ڕیکڵامەکە بە سەرکەوتوویی بڵاوکرایەوە');
     } catch (error: any) {
@@ -129,6 +131,21 @@ export default function AdsPage() {
               <p className="text-[10px] text-slate-400 px-2 italic">* لینکی وێنەکە دەبێت ڕاستەوخۆ بێت و بە .jpg یان .png کۆتایی بێت</p>
             </div>
 
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">لینکی کرتەکردن (ئارەزوومەندانە)</label>
+              <div className="relative">
+                <ExternalLink className="absolute left-4 top-4 text-slate-400" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="https://facebook.com/..."
+                  className="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-[#CC222F]/20 font-bold"
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                />
+              </div>
+              <p className="text-[10px] text-slate-400 px-2 italic">* کاتێک بەکارهێنەر کلیک لە ڕیکڵامەکە دەکات دەچێتە ئەم لینکە</p>
+            </div>
+
             {imageUrl && (
               <div className="mt-4">
                 <label className="text-sm font-bold text-slate-700 mb-2 block">پێشبینین</label>
@@ -185,6 +202,12 @@ export default function AdsPage() {
                 <div className="p-5 flex items-center justify-between">
                   <div>
                     <h4 className="font-black text-slate-900 text-lg">{ad.name}</h4>
+                    {ad.link && (
+                      <a href={ad.link} target="_blank" rel="noreferrer" className="text-xs text-blue-500 font-bold hover:underline flex items-center gap-1 mt-1">
+                        <ExternalLink size={12} />
+                        کردنەوەی لینک
+                      </a>
+                    )}
                     <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase">
                       Created: {new Date(ad.created_at).toLocaleDateString()}
                     </p>

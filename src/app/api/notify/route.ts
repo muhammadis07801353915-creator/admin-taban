@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://kdlwstunxgbwxwafhvkm.supabase.co';
 
 export async function POST(req: NextRequest) {
   try {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) {
+      return NextResponse.json({ error: 'Service key missing' }, { status: 500 });
+    }
+
+    const supabase = createClient(SUPABASE_URL, serviceKey);
+
     const { title, body } = await req.json();
 
     if (!title || !body) {

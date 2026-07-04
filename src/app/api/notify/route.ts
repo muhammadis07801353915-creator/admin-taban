@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://kdlwstunxgbwxwafhvkm.supabase.co';
+const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL.trim() !== '') ? process.env.NEXT_PUBLIC_SUPABASE_URL : 'https://kdlwstunxgbwxwafhvkm.supabase.co';
 
 export async function POST(req: NextRequest) {
   try {

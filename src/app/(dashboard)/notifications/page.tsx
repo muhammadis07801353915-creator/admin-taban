@@ -30,7 +30,7 @@ export default function NotificationsPage() {
   async function fetchData() {
     setLoadingLogs(true);
     const [{ data: tokens }, { data: notifLogs }] = await Promise.all([
-      supabase.from('push_tokens').select('id'),
+      supabase.from('push_tokens').select('token'),
       supabase.from('notifications_log').select('*').order('created_at', { ascending: false }).limit(20),
     ]);
     setDeviceCount(tokens?.length || 0);

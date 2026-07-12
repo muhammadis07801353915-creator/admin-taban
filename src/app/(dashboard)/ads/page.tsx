@@ -16,6 +16,8 @@ export default function AdsPage() {
   // Form State
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [imageUrlAr, setImageUrlAr] = useState('');
+  const [imageUrlEn, setImageUrlEn] = useState('');
   const [link, setLink] = useState('');
   const [type, setType] = useState<'slider' | 'banner'>('slider');
 
@@ -44,12 +46,21 @@ export default function AdsPage() {
     try {
       const { error } = await supabase
         .from('meta_ads')
-        .insert([{ name, image_url: imageUrl, type, link }]);
+        .insert([{ 
+          name, 
+          image_url: imageUrl, 
+          image_url_ar: imageUrlAr || null,
+          image_url_en: imageUrlEn || null,
+          type, 
+          link 
+        }]);
 
       if (error) throw error;
       
       setName('');
       setImageUrl('');
+      setImageUrlAr('');
+      setImageUrlEn('');
       setLink('');
       fetchAds();
       alert('ڕیکڵامەکە بە سەرکەوتوویی بڵاوکرایەوە');
@@ -117,7 +128,7 @@ export default function AdsPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">لینکی دەرەکی وێنە</label>
+              <label className="text-sm font-bold text-slate-700">لینکی دەرەکی وێنە (زمانی کوردی - سەرەکی) *</label>
               <div className="relative">
                 <ExternalLink className="absolute left-4 top-4 text-slate-400" size={18} />
                 <input 
@@ -128,7 +139,35 @@ export default function AdsPage() {
                   onChange={(e) => setImageUrl(e.target.value)}
                 />
               </div>
-              <p className="text-[10px] text-slate-400 px-2 italic">* لینکی وێنەکە دەبێت ڕاستەوخۆ بێت و بە .jpg یان .png کۆتایی بێت</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">لینکی دەرەکی وێنە (زمانی عەرەبی) - ئارەزوومەندانە</label>
+              <div className="relative">
+                <ExternalLink className="absolute left-4 top-4 text-slate-400" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="https://example.com/image_ar.jpg"
+                  className="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-[#CC222F]/20 font-bold"
+                  value={imageUrlAr}
+                  onChange={(e) => setImageUrlAr(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">لینکی دەرەکی وێنە (زمانی ئینگلیزی) - ئارەزوومەندانە</label>
+              <div className="relative">
+                <ExternalLink className="absolute left-4 top-4 text-slate-400" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="https://example.com/image_en.jpg"
+                  className="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-[#CC222F]/20 font-bold"
+                  value={imageUrlEn}
+                  onChange={(e) => setImageUrlEn(e.target.value)}
+                />
+              </div>
+              <p className="text-[10px] text-slate-400 px-2 italic mt-1">* لینکی وێنەکە دەبێت ڕاستەوخۆ بێت و بە .jpg یان .png کۆتایی بێت</p>
             </div>
 
             <div className="space-y-2">

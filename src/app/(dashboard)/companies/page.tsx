@@ -25,6 +25,7 @@ interface Showroom {
   is_verified: boolean;
   verified_until: string | null;
   created_at: string;
+  sort_order: number;
 }
 
 export default function CompaniesPage() {
@@ -43,6 +44,7 @@ export default function CompaniesPage() {
     const { data, error } = await supabase
       .from("showrooms")
       .select("*")
+      .order("sort_order", { ascending: false })
       .order("created_at", { ascending: false });
     
     if (error) {
@@ -117,6 +119,15 @@ export default function CompaniesPage() {
     s.phone?.includes(search)
   );
 
+  async function updateSortOrder(id: string, value: string) {
+    const sort_order = parseInt(value) || 0;
+    const { error } = await supabase
+      .from("showrooms")
+      .update({ sort_order })
+      .eq("id", id);
+    if (!error) fetchShowrooms();
+  }
+
   return (
     <div className="p-8 bg-[#f8fafc] min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -161,6 +172,7 @@ export default function CompaniesPage() {
                   <th className="px-8 py-5 text-slate-400 font-bold uppercase text-xs tracking-widest">Showroom Details</th>
                   <th className="px-8 py-5 text-slate-400 font-bold uppercase text-xs tracking-widest">Account Status</th>
                   <th className="px-8 py-5 text-slate-400 font-bold uppercase text-xs tracking-widest">Verification</th>
+                  <th className="px-8 py-5 text-slate-400 font-bold uppercase text-xs tracking-widest">Order</th>
                   <th className="px-8 py-5 text-slate-400 font-bold uppercase text-xs tracking-widest">Expiry Date</th>
                   <th className="px-8 py-5 text-slate-400 font-bold uppercase text-xs tracking-widest text-right">Actions</th>
                 </tr>
@@ -198,6 +210,14 @@ export default function CompaniesPage() {
                             <span>UNVERIFIED</span>
                           </div>
                         )}
+                      </td>
+                      <td className="px-8 py-6">
+                        <input
+                          type="number"
+                          className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-center font-bold text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          defaultValue={s.sort_order || 0}
+                          onBlur={(e) => updateSortOrder(s.id, e.target.value)}
+                        />
                       </td>
                       <td className="px-8 py-6">
                         {s.verified_until ? (

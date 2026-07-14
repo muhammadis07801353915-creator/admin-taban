@@ -30,7 +30,7 @@ const menuItems = [
   { name: "Data & Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Car Listings", href: "/cars", icon: Car },
   { name: "Ads & Banners", href: "/ads", icon: ImageIcon },
-  { name: "Brands & Models", href: "/brands", icon: Layers },
+  { name: "Vehicle Configurator", href: "/vehicles", icon: Layers },
   { name: "App Content (CMS)", href: "/content", icon: Layers },
   { name: "Payments & Ads", href: "/payments", icon: CreditCard },
   { name: "Locations", href: "/locations", icon: MapPin },

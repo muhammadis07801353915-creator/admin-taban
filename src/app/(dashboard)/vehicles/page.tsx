@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   Database,
   Layers,
-  Settings2
+  Settings2,
+  Check
 } from "lucide-react";
 
 // Massive data for bulk import including Specs
@@ -59,6 +60,11 @@ export default function VehiclesPage() {
   const [isAddingModel, setIsAddingModel] = useState(false);
   const [isAddingSpec, setIsAddingSpec] = useState(false);
   const [newItemName, setNewItemName] = useState("");
+
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [editingTable, setEditingTable] = useState<string>("");
 
   useEffect(() => {
     fetchBrands();
@@ -155,6 +161,79 @@ export default function VehiclesPage() {
     }
   };
 
+  const startEdit = (id: string, name: string, table: string) => {
+    setEditingId(id);
+    setEditingName(name);
+    setEditingTable(table);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingName("");
+    setEditingTable("");
+  };
+
+  const saveEdit = async () => {
+    if (!editingName.trim() || !editingId) return;
+    const { error } = await supabase.from(editingTable).update({ name: editingName.trim() }).eq("id", editingId);
+    if (!error) {
+      if (editingTable === 'brands') fetchBrands();
+      if (editingTable === 'models') fetchModels(selectedBrand.id);
+      if (editingTable === 'specs') fetchSpecs(selectedModel.id);
+      cancelEdit();
+    }
+  };
+
+  const renderItem = (item: any, table: string, isSelected: boolean, onClick: () => void) => {
+    const isEditing = editingId === item.id;
+
+    if (isEditing) {
+      return (
+        <div key={item.id} className="flex items-center gap-2 p-2 bg-blue-50 border-2 border-blue-200 rounded-2xl">
+          <input
+            autoFocus
+            className="flex-1 bg-white border border-blue-300 rounded-xl px-3 py-2 font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-400"
+            value={editingName}
+            onChange={(e) => setEditingName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') cancelEdit(); }}
+          />
+          <button onClick={saveEdit} className="p-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-all">
+            <Check size={16} />
+          </button>
+          <button onClick={cancelEdit} className="p-2 bg-slate-200 text-slate-600 rounded-xl hover:bg-slate-300 transition-all">
+            <X size={16} />
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        key={item.id}
+        className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all group ${isSelected ? "bg-[#CC222F] text-white shadow-lg" : "hover:bg-slate-50"}`}
+        onClick={onClick}
+      >
+        <span className="text-lg font-black flex-1">{item.name}</span>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => startEdit(item.id, item.name, table)}
+            className={`p-1.5 rounded-lg transition-all ${isSelected ? 'hover:bg-white/20 text-white' : 'hover:bg-blue-100 text-blue-500'}`}
+          >
+            <Edit2 size={14} />
+          </button>
+          <button
+            onClick={() => handleDelete(table, item.id)}
+            className={`p-1.5 rounded-lg transition-all ${isSelected ? 'hover:bg-white/20 text-white' : 'hover:bg-red-100 text-red-500'}`}
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+        <ChevronRight size={18} className={`ml-1 ${isSelected ? 'opacity-100' : 'opacity-30'}`} />
+      </div>
+    );
+  };
+
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
@@ -179,12 +258,9 @@ export default function VehiclesPage() {
           </div>
           <div className="p-4"><input type="text" placeholder="Search..." className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 font-bold" value={searchTerm} onChange={(e) => setSearchQuery(e.target.value)} /></div>
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {brands.filter(b => b.name.toLowerCase().includes(searchTerm.toLowerCase())).map((brand) => (
-              <div key={brand.id} onClick={() => { setSelectedBrand(brand); setSelectedModel(null); fetchModels(brand.id); }} className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all ${selectedBrand?.id === brand.id ? "bg-[#CC222F] text-white shadow-lg" : "hover:bg-slate-50"}`}>
-                <span className="text-lg font-black">{brand.name}</span>
-                <ChevronRight size={18} opacity={selectedBrand?.id === brand.id ? 1 : 0.3} />
-              </div>
-            ))}
+            {brands.filter(b => b.name.toLowerCase().includes(searchTerm.toLowerCase())).map((brand) =>
+              renderItem(brand, 'brands', selectedBrand?.id === brand.id, () => { setSelectedBrand(brand); setSelectedModel(null); fetchModels(brand.id); })
+            )}
           </div>
         </div>
 
@@ -198,12 +274,9 @@ export default function VehiclesPage() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {selectedBrand ? models.map((model) => (
-              <div key={model.id} onClick={() => { setSelectedModel(model); fetchSpecs(model.id); }} className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all ${selectedModel?.id === model.id ? "bg-slate-900 text-white shadow-lg" : "hover:bg-slate-50"}`}>
-                <span className="text-lg font-black">{model.name}</span>
-                <ChevronRight size={18} opacity={selectedModel?.id === model.id ? 1 : 0.3} />
-              </div>
-            )) : <div className="flex-1 flex items-center justify-center text-slate-300 font-bold">Select a brand first</div>}
+            {selectedBrand ? models.map((model) =>
+              renderItem(model, 'models', selectedModel?.id === model.id, () => { setSelectedModel(model); fetchSpecs(model.id); })
+            ) : <div className="flex-1 flex items-center justify-center text-slate-300 font-bold pt-20">Select a brand first</div>}
           </div>
         </div>
 
@@ -218,11 +291,44 @@ export default function VehiclesPage() {
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
             {selectedModel ? specs.map((spec) => (
-              <div key={spec.id} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl group">
-                <span className="text-lg font-black text-slate-700">{spec.name}</span>
-                <button onClick={() => handleDelete('specs', spec.id)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={18} /></button>
+              <div key={spec.id} className="group">
+                {editingId === spec.id ? (
+                  <div className="flex items-center gap-2 p-2 bg-blue-50 border-2 border-blue-200 rounded-2xl">
+                    <input
+                      autoFocus
+                      className="flex-1 bg-white border border-blue-300 rounded-xl px-3 py-2 font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-400"
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') cancelEdit(); }}
+                    />
+                    <button onClick={saveEdit} className="p-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-all">
+                      <Check size={16} />
+                    </button>
+                    <button onClick={cancelEdit} className="p-2 bg-slate-200 text-slate-600 rounded-xl hover:bg-slate-300 transition-all">
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:border-slate-200 transition-all">
+                    <span className="text-lg font-black text-slate-700 flex-1">{spec.name}</span>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={() => startEdit(spec.id, spec.name, 'specs')}
+                        className="p-1.5 rounded-lg hover:bg-blue-100 text-blue-500 transition-all"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete('specs', spec.id)}
+                        className="p-1.5 rounded-lg hover:bg-red-100 text-red-500 transition-all"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )) : <div className="flex-1 flex items-center justify-center text-slate-300 font-bold">Select a model first</div>}
+            )) : <div className="flex-1 flex items-center justify-center text-slate-300 font-bold pt-20">Select a model first</div>}
           </div>
         </div>
       </div>

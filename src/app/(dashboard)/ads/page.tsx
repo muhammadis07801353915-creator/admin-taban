@@ -20,6 +20,7 @@ export default function AdsPage() {
   const [imageUrlEn, setImageUrlEn] = useState('');
   const [link, setLink] = useState('');
   const [type, setType] = useState<'slider' | 'banner'>('slider');
+  const [actionSell, setActionSell] = useState(false);
 
   useEffect(() => {
     fetchAds();
@@ -52,7 +53,8 @@ export default function AdsPage() {
           image_url_ar: imageUrlAr || null,
           image_url_en: imageUrlEn || null,
           type, 
-          link 
+          link,
+          action_sell: actionSell
         }]);
 
       if (error) throw error;
@@ -62,6 +64,7 @@ export default function AdsPage() {
       setImageUrlAr('');
       setImageUrlEn('');
       setLink('');
+      setActionSell(false);
       fetchAds();
       alert('ڕیکڵامەکە بە سەرکەوتوویی بڵاوکرایەوە');
     } catch (error: any) {
@@ -185,6 +188,22 @@ export default function AdsPage() {
               <p className="text-[10px] text-slate-400 px-2 italic">* کاتێک بەکارهێنەر کلیک لە ڕیکڵامەکە دەکات دەچێتە ئەم لینکە</p>
             </div>
 
+            <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl">
+              <input 
+                type="checkbox" 
+                id="actionSell"
+                className="w-5 h-5 rounded border-slate-300 text-[#CC222F] focus:ring-[#CC222F]"
+                checked={actionSell}
+                onChange={(e) => setActionSell(e.target.checked)}
+              />
+              <div className="flex flex-col">
+                <label htmlFor="actionSell" className="text-sm font-bold text-slate-700 cursor-pointer">
+                  کردنەوەی پەڕەی فرۆشتن لەبری لینک
+                </label>
+                <span className="text-[10px] text-slate-400 font-medium">ئەگەر ئەمە هەڵبژێریت، بەکارهێنەر دەچێتە بەشی فرۆشتنی سەیارە کاتێک دەستی لێدەدات</span>
+              </div>
+            </div>
+
             {imageUrl && (
               <div className="mt-4">
                 <label className="text-sm font-bold text-slate-700 mb-2 block">پێشبینین</label>
@@ -246,6 +265,12 @@ export default function AdsPage() {
                         <ExternalLink size={12} />
                         کردنەوەی لینک
                       </a>
+                    )}
+                    {ad.action_sell && (
+                      <span className="text-xs text-[#CC222F] font-bold flex items-center gap-1 mt-1">
+                        <ExternalLink size={12} />
+                        کردنەوەی پەڕەی فرۆشتن
+                      </span>
                     )}
                     <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase">
                       Created: {new Date(ad.created_at).toLocaleDateString()}

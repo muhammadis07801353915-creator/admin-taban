@@ -46,25 +46,42 @@ export async function POST(req: NextRequest) {
     const batchSize = 100;
     let totalSent = 0;
     let errors = 0;
+    let errorDetails: any[] = [];
 
     for (let i = 0; i < messages.length; i += batchSize) {
       const batch = messages.slice(i, i + batchSize);
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Accept-Encoding': 'gzip, deflate',
+      };
+      
+      if (process.env.EXPO_ACCESS_TOKEN) {
+        headers['Authorization'] = `Bearer ${process.env.EXPO_ACCESS_TOKEN}`;
+      }
+
       const response = await fetch('https://exp.host/--/api/v2/push/send', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Accept-Encoding': 'gzip, deflate',
-        },
+        headers,
         body: JSON.stringify(batch),
       });
 
       const result = await response.json();
       
-      if (response.ok) {
-        totalSent += batch.length;
+      if (response.ok && result.data) {
+        // Expo returns 200 OK even if some individual messages fail. We must check result.data
+        result.data.forEach((ticket: any) => {
+          if (ticket.status === 'ok') {
+            totalSent++;
+          } else {
+            errors++;
+            errorDetails.push(ticket);
+          }
+        });
       } else {
         errors += batch.length;
+        errorDetails.push(result);
         console.error('Expo push error:', result);
       }
     }
@@ -79,10 +96,11 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
-      message: 'Notifications sent successfully',
+      message: 'Notifications processed',
       sent: totalSent,
       failed: errors,
       total: tokens.length,
+      details: errorDetails
     });
   } catch (e: any) {
     console.error('Notification error:', e);

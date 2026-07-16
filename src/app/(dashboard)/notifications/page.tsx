@@ -143,10 +143,19 @@ export default function NotificationsPage() {
                 ) : (
                   <div className="space-y-1">
                     <p className="font-black text-sm flex items-center gap-2">
-                      <CheckCircle2 size={16} /> ناردرا بە سەرکەوتوویی!
+                      <CheckCircle2 size={16} /> ئەنجامی ناردن
                     </p>
                     <p className="text-xs font-bold">نێردرا بۆ: {result.sent} مۆبایل</p>
-                    {result.failed > 0 && <p className="text-xs text-red-500">شکستی هێنا: {result.failed}</p>}
+                    {result.failed > 0 && (
+                      <>
+                        <p className="text-xs text-red-500">شکستی هێنا: {result.failed}</p>
+                        {result.details && result.details.length > 0 && (
+                          <p className="text-[10px] text-red-400 font-medium">
+                            هۆکار: {result.details[0].message || JSON.stringify(result.details[0])}
+                          </p>
+                        )}
+                      </>
+                    )}
                   </div>
                 )}
               </div>

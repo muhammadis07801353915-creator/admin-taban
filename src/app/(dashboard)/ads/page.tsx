@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { 
   Plus, Trash2, ExternalLink, 
   Image as ImageIcon, Loader2,
-  Layout, Bookmark, CheckCircle2
+  Layout, Bookmark, CheckCircle2, MousePointerClick
 } from 'lucide-react';
 
 export default function AdsPage() {
@@ -276,8 +276,12 @@ export default function AdsPage() {
                       Created: {new Date(ad.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center">
-                    <CheckCircle2 className="text-emerald-500" size={20} />
+                  <div className="flex flex-col items-center justify-center bg-slate-50 p-3 rounded-2xl min-w-[80px]">
+                    <div className="flex items-center gap-1.5 text-slate-700">
+                      <MousePointerClick size={16} />
+                      <span className="font-black text-xl">{ad.clicks || 0}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-bold mt-0.5">کلیک</span>
                   </div>
                 </div>
               </div>

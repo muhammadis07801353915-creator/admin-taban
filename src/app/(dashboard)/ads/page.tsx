@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { 
   Plus, Trash2, ExternalLink, 
   Image as ImageIcon, Loader2,
-  Layout, Bookmark, CheckCircle2, MousePointerClick
+  Layout, Bookmark, CheckCircle2, MousePointerClick, Edit2, X
 } from 'lucide-react';
 
 export default function AdsPage() {
@@ -21,6 +21,7 @@ export default function AdsPage() {
   const [link, setLink] = useState('');
   const [type, setType] = useState<'slider' | 'banner'>('slider');
   const [actionSell, setActionSell] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAds();
@@ -45,34 +46,60 @@ export default function AdsPage() {
     setSubmitting(true);
     
     try {
-      const { error } = await supabase
-        .from('meta_ads')
-        .insert([{ 
-          name, 
-          image_url: imageUrl, 
-          image_url_ar: imageUrlAr || null,
-          image_url_en: imageUrlEn || null,
-          type, 
-          link,
-          action_sell: actionSell
-        }]);
+      const payload = { 
+        name, 
+        image_url: imageUrl, 
+        image_url_ar: imageUrlAr || null,
+        image_url_en: imageUrlEn || null,
+        type, 
+        link,
+        action_sell: actionSell
+      };
 
-      if (error) throw error;
+      if (editingId) {
+        const { error } = await supabase
+          .from('meta_ads')
+          .update(payload)
+          .eq('id', editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('meta_ads')
+          .insert([payload]);
+        if (error) throw error;
+      }
       
-      setName('');
-      setImageUrl('');
-      setImageUrlAr('');
-      setImageUrlEn('');
-      setLink('');
-      setActionSell(false);
+      resetForm();
       fetchAds();
-      alert('ڕیکڵامەکە بە سەرکەوتوویی بڵاوکرایەوە');
+      alert(editingId ? 'ڕیکڵامەکە نوێکرایەوە' : 'ڕیکڵامەکە بە سەرکەوتوویی بڵاوکرایەوە');
     } catch (error: any) {
       console.error(error);
-      alert('هەڵەیەک ڕوویدا لە کاتی بڵاوکردنەوە: ' + error.message);
+      alert('هەڵەیەک ڕوویدا لە کاتی پاشەکەوتکردن: ' + error.message);
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function resetForm() {
+    setName('');
+    setImageUrl('');
+    setImageUrlAr('');
+    setImageUrlEn('');
+    setLink('');
+    setActionSell(false);
+    setEditingId(null);
+  }
+
+  function handleEditItem(ad: any) {
+    setName(ad.name);
+    setImageUrl(ad.image_url || '');
+    setImageUrlAr(ad.image_url_ar || '');
+    setImageUrlEn(ad.image_url_en || '');
+    setLink(ad.link || '');
+    setType(ad.type || 'slider');
+    setActionSell(ad.action_sell || false);
+    setEditingId(ad.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function handleDelete(id: string) {
@@ -93,11 +120,18 @@ export default function AdsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Form Panel */}
         <div className="lg:col-span-1 bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm space-y-6 h-fit">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-red-50 rounded-xl">
-               <Plus className="w-5 h-5 text-[#CC222F]" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-50 rounded-xl">
+                 <Plus className="w-5 h-5 text-[#CC222F]" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">{editingId ? 'دەستکاریکردنی ڕیکڵام' : 'زیادکردنی ڕیکڵام'}</h3>
             </div>
-            <h3 className="text-xl font-bold text-slate-900">زیادکردنی ڕیکڵام</h3>
+            {editingId && (
+              <button onClick={resetForm} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -221,8 +255,8 @@ export default function AdsPage() {
               disabled={submitting}
               className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-lg shadow-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
-              {submitting ? <Loader2 className="animate-spin" /> : <Plus size={20} />}
-              بڵاوکردنەوەی ڕیکڵام
+              {submitting ? <Loader2 className="animate-spin" /> : (editingId ? <Edit2 size={20} /> : <Plus size={20} />)}
+              {editingId ? 'نوێکردنەوەی ڕیکڵام' : 'بڵاوکردنەوەی ڕیکڵام'}
             </button>
           </div>
         </div>
@@ -250,12 +284,20 @@ export default function AdsPage() {
                       {ad.type === 'slider' ? 'Top Slider' : 'Banner'}
                     </span>
                   </div>
-                  <button 
-                    onClick={() => handleDelete(ad.id)}
-                    className="absolute top-4 right-4 bg-white/90 backdrop-blur p-2 rounded-xl text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                    <button 
+                      onClick={() => handleEditItem(ad)}
+                      className="bg-white/90 backdrop-blur p-2 rounded-xl text-blue-500 hover:bg-blue-500 hover:text-white"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(ad.id)}
+                      className="bg-white/90 backdrop-blur p-2 rounded-xl text-red-500 hover:bg-red-500 hover:text-white"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
                 <div className="p-5 flex items-center justify-between">
                   <div>

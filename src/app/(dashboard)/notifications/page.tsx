@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Bell, Send, Loader2, CheckCircle2, Smartphone, Users, MessageSquareDashed, History } from 'lucide-react';
+import { Bell, Send, Loader2, CheckCircle2, Smartphone, Users, MessageSquareDashed, History, Image as ImageIcon, Link2 } from 'lucide-react';
 
 interface NotifLog {
   id: string;
@@ -17,6 +17,8 @@ interface NotifLog {
 export default function NotificationsPage() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [iconUrl, setIconUrl] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [logs, setLogs] = useState<NotifLog[]>([]);
@@ -49,13 +51,20 @@ export default function NotificationsPage() {
       const res = await fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, body }),
+        body: JSON.stringify({
+          title,
+          body,
+          iconUrl: iconUrl.trim() || undefined,
+          imageUrl: imageUrl.trim() || undefined,
+        }),
       });
       const data = await res.json();
       setResult(data);
       if (res.ok) {
         setTitle('');
         setBody('');
+        setIconUrl('');
+        setImageUrl('');
         fetchData();
       }
     } catch (e: any) {
@@ -70,7 +79,7 @@ export default function NotificationsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">ناردنی ئاگادارکردنەوە</h1>
-          <p className="text-slate-500 mt-1">پەیام بنێرە بۆ هەموو بەکارهێنەرانی ئەپ بە یەک کلیک.</p>
+          <p className="text-slate-500 mt-1">پەیام بە تێکست یان وێنە و لۆگۆ بنێرە بۆ هەموو بەکارهێنەرانی ئەپ بە یەک کلیک.</p>
         </div>
         <div className="flex items-center gap-3 bg-white border border-slate-100 shadow-sm rounded-2xl px-5 py-3">
           <Smartphone className="text-[#CC222F]" size={22} />
@@ -91,30 +100,54 @@ export default function NotificationsPage() {
             <h3 className="text-xl font-bold text-slate-900">دروستکردنی ئاگادارکردنەوە</h3>
           </div>
 
-          {/* Preview */}
-          <div className="bg-slate-900 rounded-3xl p-4 space-y-2">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3">پێشبینینی ئاگادارکردنەوە</p>
-            <div className="bg-white/10 backdrop-blur rounded-2xl p-3 flex gap-3 items-start">
-              <div className="w-10 h-10 bg-[#CC222F] rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="font-black text-white text-lg">T</span>
+          {/* Live Preview */}
+          <div className="bg-slate-900 rounded-3xl p-4 space-y-3">
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">پێشبینینی ئاگادارکردنەوە لە مۆبایل</p>
+            <div className="bg-white/10 backdrop-blur rounded-2xl p-3 space-y-2">
+              <div className="flex gap-3 items-start">
+                {iconUrl.trim() ? (
+                  <img
+                    src={iconUrl.trim()}
+                    alt="Logo"
+                    className="w-10 h-10 rounded-xl object-cover border border-white/20 shrink-0"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-[#CC222F] rounded-xl flex items-center justify-center shrink-0">
+                    <span className="font-black text-white text-lg">T</span>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-black truncate">
+                    {title || 'پەیام لە تابان کارس'}
+                  </p>
+                  <p className="text-white/70 text-xs font-medium mt-0.5 line-clamp-2">
+                    {body || 'ناوەڕۆکی ئاگادارکردنەوەکە لێرەدا دەردەکەوێت...'}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-black truncate">
-                  {title || 'پەیام لە تابان کارس'}
-                </p>
-                <p className="text-white/60 text-xs font-medium mt-0.5 line-clamp-2">
-                  {body || 'ناوەڕۆکی ئاگادارکردنەوەکە لێرەدا دەردەکەوێت...'}
-                </p>
-              </div>
+
+              {/* Image Banner Preview if URL entered */}
+              {imageUrl.trim() && (
+                <div className="mt-2 rounded-xl overflow-hidden border border-white/10 max-h-36">
+                  <img
+                    src={imageUrl.trim()}
+                    alt="Notification Attachment"
+                    className="w-full h-36 object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
           <div className="space-y-4">
+            {/* Title */}
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">ناوی ئاگادارکردنەوە</label>
+              <label className="text-sm font-bold text-slate-700">ناوی ئاگادارکردنەوە (ناونیشان)</label>
               <input
                 type="text"
-                placeholder="بۆ نموونە: ئۆفەری تایبەت"
+                placeholder="بۆ نموونە: ئۆفەری تایبەتی تابان کارس"
                 className="w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-[#CC222F]/20 font-bold text-right"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -123,17 +156,50 @@ export default function NotificationsPage() {
               <p className="text-[10px] text-slate-400 px-2">{title.length}/100</p>
             </div>
 
+            {/* Body */}
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">ناوەڕۆکی پەیام</label>
+              <label className="text-sm font-bold text-slate-700">ناوەڕۆکی پەیام (تێکست)</label>
               <textarea
                 placeholder="پەیامی تەواوەکەت بنووسە لێرە..."
                 className="w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-[#CC222F]/20 font-bold text-right resize-none"
-                rows={4}
+                rows={3}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 maxLength={500}
               />
               <p className="text-[10px] text-slate-400 px-2">{body.length}/500</p>
+            </div>
+
+            {/* Custom Icon URL */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700 flex items-center gap-1.5 justify-end">
+                <span>(لینکی دەرەکی)</span>
+                <span>لۆگۆی ئاگادارکردنەوە</span>
+                <Link2 className="w-4 h-4 text-slate-400" />
+              </label>
+              <input
+                type="url"
+                placeholder="https://example.com/logo.png (ئارەزوومەندانە)"
+                className="w-full bg-slate-50 border-none rounded-2xl p-3.5 focus:ring-2 focus:ring-[#CC222F]/20 text-xs font-mono text-left text-slate-700"
+                value={iconUrl}
+                onChange={(e) => setIconUrl(e.target.value)}
+              />
+            </div>
+
+            {/* Attachment Image URL */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700 flex items-center gap-1.5 justify-end">
+                <span>(لینکی دەرەکی)</span>
+                <span>وێنەی ڕاگەیاندن / ئاگادارکردنەوە</span>
+                <ImageIcon className="w-4 h-4 text-slate-400" />
+              </label>
+              <input
+                type="url"
+                placeholder="https://example.com/banner.jpg (ئارەزوومەندانە)"
+                className="w-full bg-slate-50 border-none rounded-2xl p-3.5 focus:ring-2 focus:ring-[#CC222F]/20 text-xs font-mono text-left text-slate-700"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+              />
             </div>
 
             {result && (

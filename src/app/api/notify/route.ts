@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
     const supabase = createClient(SUPABASE_URL, serviceKey);
 
-    const { title, body } = await req.json();
+    const { title, body, iconUrl, imageUrl } = await req.json();
 
     if (!title || !body) {
       return NextResponse.json({ error: 'Title and body are required' }, { status: 400 });
@@ -32,15 +32,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'No registered devices found', sent: 0 });
     }
 
-    // Build Expo push messages
-    const allMessages = tokens.map((row: any) => ({
-      to: row.token,
-      sound: 'default',
-      title: `${title}`,
-      body: body,
-      data: { type: 'broadcast' },
-      channelId: 'default',
-    }));
+    // Build Expo push messages with optional custom iconUrl and imageUrl
+    const allMessages = tokens.map((row: any) => {
+      const msg: any = {
+        to: row.token,
+        sound: 'default',
+        title: title,
+        body: body,
+        data: { 
+          type: 'broadcast',
+          iconUrl: iconUrl || null,
+          imageUrl: imageUrl || null
+        },
+        channelId: 'default',
+      };
+
+      // Add rich media / custom icon if provided
+      if (iconUrl && iconUrl.trim() !== '') {
+        msg.icon = iconUrl.trim();
+      }
+      if (imageUrl && imageUrl.trim() !== '') {
+        msg.image = imageUrl.trim(); // Rich notification banner image
+      }
+
+      return msg;
+    });
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -56,8 +72,7 @@ export async function POST(req: NextRequest) {
     let errors = 0;
     let errorDetails: any[] = [];
 
-    // Expo API fails with PUSH_TOO_MANY_EXPERIENCE_IDS if a single request batch contains tokens from different Expo account experiences.
-    // To solve this, we send each token individually (or grouped by project, sending 1-by-1 prevents 1 bad token from breaking others).
+    // Send individually to ensure 1 bad token doesn't break batch
     for (const msg of allMessages) {
       try {
         const response = await fetch('https://exp.host/--/api/v2/push/send', {

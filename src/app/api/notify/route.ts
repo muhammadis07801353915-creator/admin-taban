@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'No registered devices found', sent: 0 });
     }
 
-    // Build Expo push messages (batch of 100)
-    const messages = tokens.map((row: any) => ({
+    // Build Expo push messages
+    const allMessages = tokens.map((row: any) => ({
       to: row.token,
       sound: 'default',
       title: `${title}`,
@@ -42,47 +42,47 @@ export async function POST(req: NextRequest) {
       channelId: 'default',
     }));
 
-    // Send to Expo Push API in batches of 100
-    const batchSize = 100;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Accept-Encoding': 'gzip, deflate',
+    };
+    
+    if (process.env.EXPO_ACCESS_TOKEN) {
+      headers['Authorization'] = `Bearer ${process.env.EXPO_ACCESS_TOKEN}`;
+    }
+
     let totalSent = 0;
     let errors = 0;
     let errorDetails: any[] = [];
 
-    for (let i = 0; i < messages.length; i += batchSize) {
-      const batch = messages.slice(i, i + batchSize);
-      
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Accept-Encoding': 'gzip, deflate',
-      };
-      
-      if (process.env.EXPO_ACCESS_TOKEN) {
-        headers['Authorization'] = `Bearer ${process.env.EXPO_ACCESS_TOKEN}`;
-      }
+    // Expo API fails with PUSH_TOO_MANY_EXPERIENCE_IDS if a single request batch contains tokens from different Expo account experiences.
+    // To solve this, we send each token individually (or grouped by project, sending 1-by-1 prevents 1 bad token from breaking others).
+    for (const msg of allMessages) {
+      try {
+        const response = await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify([msg]),
+        });
 
-      const response = await fetch('https://exp.host/--/api/v2/push/send', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(batch),
-      });
-
-      const result = await response.json();
-      
-      if (response.ok && result.data) {
-        // Expo returns 200 OK even if some individual messages fail. We must check result.data
-        result.data.forEach((ticket: any) => {
-          if (ticket.status === 'ok') {
+        const result = await response.json();
+        
+        if (response.ok && result.data && Array.isArray(result.data)) {
+          const ticket = result.data[0];
+          if (ticket && ticket.status === 'ok') {
             totalSent++;
           } else {
             errors++;
-            errorDetails.push(ticket);
+            errorDetails.push({ token: msg.to, ticket });
           }
-        });
-      } else {
-        errors += batch.length;
-        errorDetails.push(result);
-        console.error('Expo push error:', result);
+        } else {
+          errors++;
+          errorDetails.push({ token: msg.to, error: result });
+        }
+      } catch (err: any) {
+        errors++;
+        errorDetails.push({ token: msg.to, exception: err.message });
       }
     }
 

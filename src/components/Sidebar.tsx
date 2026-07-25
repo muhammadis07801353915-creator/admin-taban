@@ -16,7 +16,8 @@ import {
   BarChart3,
   MapPin,
   MessageSquare,
-  Bell
+  Bell,
+  Smartphone
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -38,6 +39,7 @@ const menuItems = [
   { name: "Users", href: "/users", icon: Users },
   { name: "Support Chats", href: "/support", icon: MessageSquare },
   { name: "Notifications", href: "/notifications", icon: Bell },
+  { name: "App Updates", href: "/app-updates", icon: Smartphone },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

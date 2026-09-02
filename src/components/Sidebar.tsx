@@ -1,7 +1,8 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   LayoutDashboard, 
   Car, 
@@ -17,7 +18,9 @@ import {
   MapPin,
   MessageSquare,
   Bell,
-  Smartphone
+  Smartphone,
+  ShieldCheck,
+  UserCheck
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -26,25 +29,48 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const menuItems = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Data & Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Car Listings", href: "/cars", icon: Car },
-  { name: "Ads & Banners", href: "/ads", icon: ImageIcon },
-  { name: "Vehicle Configurator", href: "/vehicles", icon: Layers },
-  { name: "App Content (CMS)", href: "/content", icon: Layers },
-  { name: "Payments & Ads", href: "/payments", icon: CreditCard },
-  { name: "Locations", href: "/locations", icon: MapPin },
-  { name: "Showrooms", href: "/companies", icon: Building2 },
-  { name: "Users", href: "/users", icon: Users },
-  { name: "Support Chats", href: "/support", icon: MessageSquare },
-  { name: "Notifications", href: "/notifications", icon: Bell },
-  { name: "App Updates", href: "/app-updates", icon: Smartphone },
-  { name: "Settings", href: "/settings", icon: Settings },
+const allMenuItems = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ['superadmin'] },
+  { name: "Data & Analytics", href: "/analytics", icon: BarChart3, roles: ['superadmin'] },
+  { name: "Car Listings", href: "/cars", icon: Car, roles: ['superadmin', 'assistant'] },
+  { name: "Ads & Banners", href: "/ads", icon: ImageIcon, roles: ['superadmin'] },
+  { name: "Vehicle Configurator", href: "/vehicles", icon: Layers, roles: ['superadmin'] },
+  { name: "App Content (CMS)", href: "/content", icon: Layers, roles: ['superadmin'] },
+  { name: "Payments & Ads", href: "/payments", icon: CreditCard, roles: ['superadmin'] },
+  { name: "Locations", href: "/locations", icon: MapPin, roles: ['superadmin'] },
+  { name: "Showrooms", href: "/companies", icon: Building2, roles: ['superadmin'] },
+  { name: "Users", href: "/users", icon: Users, roles: ['superadmin'] },
+  { name: "Support Chats", href: "/support", icon: MessageSquare, roles: ['superadmin'] },
+  { name: "Notifications", href: "/notifications", icon: Bell, roles: ['superadmin'] },
+  { name: "App Updates", href: "/app-updates", icon: Smartphone, roles: ['superadmin'] },
+  { name: "Settings", href: "/settings", icon: Settings, roles: ['superadmin'] },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [role, setRole] = useState<'superadmin' | 'assistant' | null>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated && data.role) {
+          setRole(data.role);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+    router.refresh();
+  };
+
+  const visibleMenuItems = allMenuItems.filter(item => 
+    !role || item.roles.includes(role)
+  );
 
   return (
     <div className="flex flex-col w-64 bg-slate-900 text-white h-screen border-r border-slate-800">
@@ -54,12 +80,24 @@ export function Sidebar() {
         </div>
         <div>
           <h1 className="font-bold text-lg tracking-tight">Taban Admin</h1>
-          <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Management System</p>
+          <div className="flex items-center gap-1 mt-0.5">
+            {role === 'assistant' ? (
+              <>
+                <UserCheck className="w-3 h-3 text-amber-400" />
+                <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">ئادەمینی پۆستەکان (1000)</p>
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">ئادمینی سەرەکی</p>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-4 py-4 space-y-1">
-        {menuItems.map((item) => {
+      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+        {visibleMenuItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
           return (
             <Link
@@ -83,9 +121,12 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-slate-800">
-        <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-500 transition-all duration-200">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-500 transition-all duration-200"
+        >
           <LogOut className="w-5 h-5" />
-          <span className="font-medium">Logout</span>
+          <span className="font-medium">دەربازبوون (Logout)</span>
         </button>
       </div>
     </div>

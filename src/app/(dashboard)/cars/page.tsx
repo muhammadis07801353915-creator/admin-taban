@@ -24,7 +24,18 @@ interface Car {
   status: string;
   created_at: string;
   year: number;
+  vip_plan?: any;
 }
+
+const isCarExpired = (car: Car): boolean => {
+  if (!car || !car.created_at) return false;
+  const createdDate = new Date(car.created_at).getTime();
+  const now = new Date().getTime();
+  const diffInDays = (now - createdDate) / (1000 * 60 * 60 * 24);
+  const isVip = !!car.vip_plan && car.vip_plan !== 'false' && car.vip_plan !== 'free' && car.vip_plan !== 0;
+  const maxDays = isVip ? 30 : 15;
+  return diffInDays > maxDays;
+};
 
 export default function CarsPage() {
   const [cars, setCars] = useState<Car[]>([]);
@@ -123,7 +134,11 @@ export default function CarsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {filteredCars.map((car) => (
+            {filteredCars.map((car) => {
+              const expired = isCarExpired(car);
+              const isVip = !!car.vip_plan && car.vip_plan !== 'false' && car.vip_plan !== 'free' && car.vip_plan !== 0;
+
+              return (
               <tr key={car.id} className="hover:bg-slate-50/80 transition-colors group">
                 <td className="px-6 py-5">
                   <div className="flex items-center gap-4">
@@ -139,12 +154,19 @@ export default function CarsPage() {
                 <td className="px-6 py-5 font-bold text-[#CC222F] text-lg">${car.price.toLocaleString()}</td>
                 <td className="px-6 py-5 text-slate-600 font-medium">{car.city}</td>
                 <td className="px-6 py-5">
-                  <span className={`px-4 py-1.5 rounded-full text-xs font-bold flex items-center w-fit gap-1.5 ${
-                    car.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'
-                  }`}>
-                    {car.status === 'active' ? <CheckCircle size={14} /> : <Clock size={14} />}
-                    {car.status}
-                  </span>
+                  {expired ? (
+                    <span className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center w-fit gap-1.5 bg-amber-100 text-amber-800 border border-amber-200">
+                      <Clock size={14} />
+                      بەسەرچوو ({isVip ? '30 ڕۆژ VIP' : '15 ڕۆژ خۆڕایی'})
+                    </span>
+                  ) : (
+                    <span className={`px-4 py-1.5 rounded-full text-xs font-bold flex items-center w-fit gap-1.5 ${
+                      car.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'
+                    }`}>
+                      {car.status === 'active' ? <CheckCircle size={14} /> : <Clock size={14} />}
+                      {car.status}
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-5 text-right">
                   <div className="flex items-center justify-end gap-2">
@@ -167,7 +189,8 @@ export default function CarsPage() {
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {filteredCars.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-6 py-10 text-center text-slate-400 font-medium">

@@ -21,7 +21,8 @@ import {
   Smartphone,
   ShieldCheck,
   UserCheck,
-  X
+  X,
+  Activity
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -33,6 +34,7 @@ function cn(...inputs: ClassValue[]) {
 const allMenuItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ['superadmin'] },
   { name: "Data & Analytics", href: "/analytics", icon: BarChart3, roles: ['superadmin'] },
+  { name: "Server Health", href: "/server-health", icon: Activity, roles: ['superadmin'] },
   { name: "Car Listings", href: "/cars", icon: Car, roles: ['superadmin', 'assistant'] },
   { name: "Ads & Banners", href: "/ads", icon: ImageIcon, roles: ['superadmin'] },
   { name: "Vehicle Configurator", href: "/vehicles", icon: Layers, roles: ['superadmin'] },

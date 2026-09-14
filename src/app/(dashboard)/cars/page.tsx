@@ -122,8 +122,8 @@ export default function CarsPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse">
+      <div className="bg-white rounded-[24px] md:rounded-[32px] border border-slate-100 shadow-sm overflow-x-auto">
+        <table className="w-full min-w-[700px] text-left border-collapse">
           <thead>
             <tr className="bg-slate-50/50">
               <th className="px-6 py-4 text-sm font-bold text-slate-500 uppercase tracking-wider">Vehicle</th>
@@ -164,27 +164,29 @@ export default function CarsPage() {
                       car.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'
                     }`}>
                       {car.status === 'active' ? <CheckCircle size={14} /> : <Clock size={14} />}
-                      {car.status}
+                      {car.status === 'pending' ? 'چاوەڕوانە (Pending)' : car.status}
                     </span>
                   )}
                 </td>
-                <td className="px-6 py-5 text-right">
+                <td className="px-6 py-5 text-right whitespace-nowrap">
                   <div className="flex items-center justify-end gap-2">
                     {car.status === 'pending' && (
                       <button 
                         onClick={() => approveCar(car.id)}
-                        className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md shadow-emerald-500/20 hover:bg-emerald-600 transition-all flex items-center gap-2"
+                        className="bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-emerald-500/20 hover:bg-emerald-600 transition-all flex items-center gap-1.5"
+                        title="وەرگرتنی پۆستەکە"
                       >
                         <CheckCircle size={16} />
-                        Approve
+                        وەرگرتن (Approve)
                       </button>
                     )}
-                    <button className="p-2 text-slate-400 hover:text-slate-900 transition-colors"><Eye size={20} /></button>
                     <button 
                       onClick={() => deleteCar(car.id)}
-                      className="p-2 text-slate-400 hover:text-red-600 transition-colors"
+                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-1 font-bold text-xs"
+                      title="سڕینەوەی پۆستەکە"
                     >
-                      <Trash2 size={20} />
+                      <Trash2 size={18} />
+                      <span className="hidden sm:inline">سڕینەوە</span>
                     </button>
                   </div>
                 </td>

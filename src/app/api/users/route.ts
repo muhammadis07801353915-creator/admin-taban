@@ -1,13 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL.trim() !== '') ? process.env.NEXT_PUBLIC_SUPABASE_URL : 'https://kdlwstunxgbwxwafhvkm.supabase.co';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const auth = req.cookies.get('taban_admin_auth')?.value;
+    const role = req.cookies.get('taban_admin_role')?.value;
+    if (auth !== 'authenticated' || role !== 'superadmin') {
+      return NextResponse.json({ error: 'Unauthorized: Superadmin access required' }, { status: 403 });
+    }
+
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceKey) {
       return NextResponse.json({ error: 'Service key missing' }, { status: 500 });

@@ -9,6 +9,12 @@ const SUPABASE_URL = 'https://kdlwstunxgbwxwafhvkm.supabase.co';
 
 export async function DELETE(req: NextRequest) {
   try {
+    const auth = req.cookies.get('taban_admin_auth')?.value;
+    const role = req.cookies.get('taban_admin_role')?.value;
+    if (auth !== 'authenticated' || role !== 'superadmin') {
+      return NextResponse.json({ error: 'Unauthorized: Superadmin access required' }, { status: 403 });
+    }
+
     const { userId } = await req.json();
 
     if (!userId) {

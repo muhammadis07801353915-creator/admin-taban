@@ -5,6 +5,12 @@ const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_P
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = req.cookies.get('taban_admin_auth')?.value;
+    const role = req.cookies.get('taban_admin_role')?.value;
+    if (auth !== 'authenticated' || role !== 'superadmin') {
+      return NextResponse.json({ error: 'Unauthorized: Superadmin access required' }, { status: 403 });
+    }
+
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceKey) {
       return NextResponse.json({ error: 'Service key missing' }, { status: 500 });

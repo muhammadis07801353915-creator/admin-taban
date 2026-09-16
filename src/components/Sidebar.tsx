@@ -22,7 +22,8 @@ import {
   ShieldCheck,
   UserCheck,
   X,
-  Activity
+  Activity,
+  DownloadCloud
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -33,6 +34,7 @@ function cn(...inputs: ClassValue[]) {
 
 const allMenuItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ['superadmin'] },
+  { name: "App Downloads", href: "/downloads", icon: DownloadCloud, roles: ['superadmin'] },
   { name: "Data & Analytics", href: "/analytics", icon: BarChart3, roles: ['superadmin'] },
   { name: "Server Health", href: "/server-health", icon: Activity, roles: ['superadmin'] },
   { name: "Car Listings", href: "/cars", icon: Car, roles: ['superadmin', 'assistant'] },

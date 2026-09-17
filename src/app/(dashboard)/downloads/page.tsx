@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   DownloadCloud, Smartphone, Apple, RefreshCw, 
-  TrendingUp, Users, Save, CheckCircle2, AlertCircle, Search, Radio
+  TrendingUp, Users, Save, CheckCircle2, AlertCircle, Search, Radio, ShieldCheck
 } from 'lucide-react';
 
 interface VisitRecord {

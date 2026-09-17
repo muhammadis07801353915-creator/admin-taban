@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   DownloadCloud, Smartphone, Apple, RefreshCw, 
-  TrendingUp, Users, Save, CheckCircle2, AlertCircle, Search, Radio, ShieldCheck
+  TrendingUp, Users, Save, CheckCircle2, AlertCircle, Search,
+  ShieldCheck, Calendar, Clock, UserCheck, UserPlus, Sparkles
 } from 'lucide-react';
 
 interface VisitRecord {
@@ -24,10 +25,13 @@ interface PushTokenRecord {
 interface UniqueDeviceRecord {
   device_id: string;
   user_id: string | null;
-  visited_at: string;
+  first_seen: string;
+  last_seen: string;
   platform: 'android' | 'ios';
   visit_count: number;
 }
+
+type DatePreset = '24h' | '7d' | '30d' | 'all';
 
 export default function DownloadsPage() {
   const [loading, setLoading] = useState(true);
@@ -44,6 +48,7 @@ export default function DownloadsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   
   // Filter state
+  const [datePreset, setDatePreset] = useState<DatePreset>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState<'all' | 'android' | 'ios'>('all');
 
@@ -96,20 +101,34 @@ export default function DownloadsPage() {
         return 'android';
       };
 
-      // Deduplicate Visits by Unique Device ID
+      // Aggregate Visits by Unique Device ID (track first_seen & last_seen)
       const deviceMap = new Map<string, UniqueDeviceRecord>();
       rawVisits.forEach(v => {
         const devId = v.device_id || v.id;
+        const platform = getDevicePlatform(v);
+        
         if (!deviceMap.has(devId)) {
           deviceMap.set(devId, {
             device_id: devId,
             user_id: v.user_id,
-            visited_at: v.visited_at,
-            platform: getDevicePlatform(v),
+            first_seen: v.visited_at,
+            last_seen: v.visited_at,
+            platform,
             visit_count: 1
           });
         } else {
-          deviceMap.get(devId)!.visit_count++;
+          const existing = deviceMap.get(devId)!;
+          existing.visit_count++;
+          
+          if (new Date(v.visited_at) < new Date(existing.first_seen)) {
+            existing.first_seen = v.visited_at;
+          }
+          if (new Date(v.visited_at) > new Date(existing.last_seen)) {
+            existing.last_seen = v.visited_at;
+          }
+          if (v.user_id && !existing.user_id) {
+            existing.user_id = v.user_id;
+          }
         }
       });
 
@@ -146,16 +165,49 @@ export default function DownloadsPage() {
     }, 300);
   };
 
-  // Unique Device platform counts
-  const liveAndroid = uniqueDevices.filter(d => d.platform === 'android').length;
-  const liveIos = uniqueDevices.filter(d => d.platform === 'ios').length;
+  // Date Filter Cutoff
+  const getCutoffDate = (preset: DatePreset): Date | null => {
+    const now = new Date();
+    if (preset === '24h') return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    if (preset === '7d') return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    if (preset === '30d') return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    return null; // 'all'
+  };
 
-  const totalAndroid = liveAndroid + androidBase;
-  const totalIos = liveIos + iosBase;
-  const grandTotal = totalAndroid + totalIos;
+  const cutoff = getCutoffDate(datePreset);
 
-  const androidPercent = grandTotal > 0 ? Math.round((totalAndroid / grandTotal) * 100) : 95;
-  const iosPercent = grandTotal > 0 ? 100 - androidPercent : 5;
+  // 1. New Installs / Devices (first_seen >= cutoff)
+  const newInstallDevices = uniqueDevices.filter(d => {
+    if (!cutoff) return true;
+    return new Date(d.first_seen) >= cutoff;
+  });
+
+  const liveNewAndroid = newInstallDevices.filter(d => d.platform === 'android').length;
+  const liveNewIos = newInstallDevices.filter(d => d.platform === 'ios').length;
+
+  const totalNewAndroid = liveNewAndroid + (datePreset === 'all' ? androidBase : 0);
+  const totalNewIos = liveNewIos + (datePreset === 'all' ? iosBase : 0);
+  const totalNewInstalls = totalNewAndroid + totalNewIos;
+
+  // 2. Active Devices in Period (last_seen >= cutoff)
+  const activeDevices = uniqueDevices.filter(d => {
+    if (!cutoff) return true;
+    return new Date(d.last_seen) >= cutoff;
+  });
+
+  const activeAndroid = activeDevices.filter(d => d.platform === 'android').length;
+  const activeIos = activeDevices.filter(d => d.platform === 'ios').length;
+  const totalActive = activeAndroid + activeIos;
+
+  // All-time totals for market share bar
+  const liveAllAndroid = uniqueDevices.filter(d => d.platform === 'android').length;
+  const liveAllIos = uniqueDevices.filter(d => d.platform === 'ios').length;
+  const grandTotalAndroid = liveAllAndroid + androidBase;
+  const grandTotalIos = liveAllIos + iosBase;
+  const grandTotalDevices = grandTotalAndroid + grandTotalIos;
+
+  const androidPercent = grandTotalDevices > 0 ? Math.round((grandTotalAndroid / grandTotalDevices) * 100) : 95;
+  const iosPercent = grandTotalDevices > 0 ? 100 - androidPercent : 5;
 
   // Format date unambiguously: YYYY-MM-DD (HH:mm AM/PM)
   const formatDateKurdistan = (dateStr: string) => {
@@ -177,8 +229,11 @@ export default function DownloadsPage() {
     return `${year}-${month}-${day} (${strHours}:${minutes} ${ampm})`;
   };
 
-  // Filtered unique devices list
+  // Filtered unique devices list for Table (filtered by date preset first_seen, platform, and search)
   const filteredDevices = uniqueDevices.filter(d => {
+    // Date cutoff check (filter by first_seen or last_seen depending on active mode, default first_seen)
+    if (cutoff && new Date(d.first_seen) < cutoff && new Date(d.last_seen) < cutoff) return false;
+
     if (selectedPlatform === 'android' && d.platform !== 'android') return false;
     if (selectedPlatform === 'ios' && d.platform !== 'ios') return false;
 
@@ -210,9 +265,9 @@ export default function DownloadsPage() {
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
             <DownloadCloud className="w-9 h-9 text-[#CC222F]" />
-            ئاماری داولۆند و ئامێرەکان (Unique App Downloads & Devices)
+            ئاماری داولۆند و ئامێرەکان (Downloads & Platform Analytics)
           </h1>
-          <p className="text-slate-500 mt-1">ئاماری پاکژکراوەی مۆبایلە تاقانەکان بەپێی مارکێتی کوردستان (Android vs iOS)</p>
+          <p className="text-slate-500 mt-1">ئاماری دابەزاندنی نوێ (New Installs) و بەکاربەری چالاک (Active Devices) بەپێی بەروار</p>
         </div>
 
         <button
@@ -225,89 +280,147 @@ export default function DownloadsPage() {
         </button>
       </div>
 
+      {/* Date Range Preset Filter Bar */}
+      <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-slate-700 font-bold text-sm px-2">
+          <Calendar className="w-5 h-5 text-[#CC222F]" />
+          <span>فلتەری بەروار (Date Range):</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setDatePreset('24h')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              datePreset === '24h'
+                ? 'bg-[#CC222F] text-white shadow-md shadow-red-500/20'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>دوا ٢٤ کاتژمێر (Last 24 Hours)</span>
+          </button>
+
+          <button
+            onClick={() => setDatePreset('7d')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              datePreset === '7d'
+                ? 'bg-[#CC222F] text-white shadow-md shadow-red-500/20'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>دوا ٧ ڕۆژ (Last 7 Days)</span>
+          </button>
+
+          <button
+            onClick={() => setDatePreset('30d')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              datePreset === '30d'
+                ? 'bg-[#CC222F] text-white shadow-md shadow-red-500/20'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>دوا ٣٠ ڕۆژ (Last 30 Days)</span>
+          </button>
+
+          <button
+            onClick={() => setDatePreset('all')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              datePreset === 'all'
+                ? 'bg-slate-900 text-white shadow-md'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>گشتی (All Time)</span>
+          </button>
+        </div>
+      </div>
+
       {/* Primary KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
-        {/* Android Card */}
+        {/* New Installs Card (First Seen) */}
         <div className="bg-emerald-950/10 border border-emerald-500/20 rounded-[28px] p-6 relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
-              <Smartphone className="w-6 h-6 text-emerald-600" />
+              <UserPlus className="w-6 h-6 text-emerald-600" />
             </div>
             <span className="px-3 py-1 bg-emerald-500/10 text-emerald-600 rounded-full text-xs font-black">
-              {androidPercent}% سەرجەم
+              {datePreset === '24h' ? '24h' : datePreset === '7d' ? '7d' : datePreset === '30d' ? '30d' : 'All'}
             </span>
           </div>
           <div className="mt-4">
-            <div className="text-3xl font-black text-slate-900">{totalAndroid.toLocaleString()}</div>
+            <div className="text-3xl font-black text-slate-900">{totalNewInstalls.toLocaleString()}</div>
             <div className="text-xs font-bold text-emerald-700 mt-1 flex items-center gap-1">
-              <span>🤖 داگرتنی ئەندرۆید (Android Total)</span>
+              <span>📥 دابەزاندنی نوێ (New Installs)</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">
-              مۆبایلی تاقانە: {liveAndroid} · زافە: {androidBase}
+            <p className="text-[11px] text-slate-500 mt-2">
+              🤖 {totalNewAndroid} Android · 🍎 {totalNewIos} iOS
             </p>
           </div>
         </div>
 
-        {/* iOS Card */}
+        {/* Active Devices Card (Last Seen) */}
+        <div className="bg-blue-950/10 border border-blue-500/20 rounded-[28px] p-6 relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center">
+              <UserCheck className="w-6 h-6 text-blue-600" />
+            </div>
+            <span className="px-3 py-1 bg-blue-500/10 text-blue-600 rounded-full text-xs font-black">
+              چالاک
+            </span>
+          </div>
+          <div className="mt-4">
+            <div className="text-3xl font-black text-slate-900">{totalActive.toLocaleString()}</div>
+            <div className="text-xs font-bold text-blue-700 mt-1 flex items-center gap-1">
+              <span>⚡ بەکاربەری چالاک (Active Devices)</span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-2">
+              🤖 {activeAndroid} Android · 🍎 {activeIos} iOS
+            </p>
+          </div>
+        </div>
+
+        {/* iOS Total Card */}
         <div className="bg-slate-900 text-white rounded-[28px] p-6 relative overflow-hidden shadow-lg border border-slate-800">
           <div className="flex items-center justify-between">
             <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
               <Apple className="w-6 h-6 text-white" />
             </div>
             <span className="px-3 py-1 bg-white/10 text-slate-200 rounded-full text-xs font-black">
-              {iosPercent}% سەرجەم
+              {iosPercent}% مارکێت
             </span>
           </div>
           <div className="mt-4">
-            <div className="text-3xl font-black text-white">{totalIos.toLocaleString()}</div>
+            <div className="text-3xl font-black text-white">{grandTotalIos.toLocaleString()}</div>
             <div className="text-xs font-bold text-slate-300 mt-1 flex items-center gap-1">
               <span>🍎 داگرتنی ئایفۆن (iOS Total)</span>
             </div>
             <p className="text-[11px] text-slate-400 mt-2">
-              مۆبایلی تاقانە: {liveIos} · زافە: {iosBase}
+              مۆبایلی تاقانە: {liveAllIos} · زافە: {iosBase}
             </p>
           </div>
         </div>
 
-        {/* Total Downloads Card */}
+        {/* Total Devices Card */}
         <div className="bg-[#CC222F]/5 border border-[#CC222F]/20 rounded-[28px] p-6 relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div className="w-12 h-12 bg-[#CC222F]/10 rounded-2xl flex items-center justify-center">
               <DownloadCloud className="w-6 h-6 text-[#CC222F]" />
             </div>
             <span className="px-3 py-1 bg-[#CC222F]/10 text-[#CC222F] rounded-full text-xs font-black">
-              کۆی مۆبایلەکان
+              کۆی گشتی
             </span>
           </div>
           <div className="mt-4">
-            <div className="text-3xl font-black text-slate-900">{grandTotal.toLocaleString()}</div>
+            <div className="text-3xl font-black text-slate-900">{grandTotalDevices.toLocaleString()}</div>
             <div className="text-xs font-bold text-[#CC222F] mt-1">
-              📱 کۆی گشتی مۆبایلە تاقانەکان
+              📱 سەرجەم ئامێرە بێ دووبارەبووەکان
             </div>
             <p className="text-[11px] text-slate-400 mt-2">
-              سەرجەم ئامێرە بێ دووبارەبووەکان
-            </p>
-          </div>
-        </div>
-
-        {/* Total Raw Visit Log Entries */}
-        <div className="bg-blue-50/60 border border-blue-200/50 rounded-[28px] p-6 relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-            <span className="px-3 py-1 bg-blue-500/10 text-blue-600 rounded-full text-xs font-black">
-              تۆماری سەردان
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-black text-slate-900">{visits.length.toLocaleString()}</div>
-            <div className="text-xs font-bold text-blue-700 mt-1">
-              ⚡ کۆی گشتی تۆمارەکان (Raw Visits)
-            </div>
-            <p className="text-[11px] text-slate-400 mt-2">
-              لە کۆی {uniqueDevices.length} مۆبایلی تاقانە
+              🤖 {grandTotalAndroid} Android · 🍎 {grandTotalIos} iOS
             </p>
           </div>
         </div>
@@ -322,7 +435,7 @@ export default function DownloadsPage() {
             <h2 className="text-lg font-bold text-slate-900">دابەشبوونی ئامێرە تاقانەکان (Android vs iOS Market Share)</h2>
           </div>
           <div className="text-xs font-bold text-slate-500">
-            🤖 {totalAndroid} Android ({androidPercent}%) · 🍎 {totalIos} iOS ({iosPercent}%)
+            🤖 {grandTotalAndroid} Android ({androidPercent}%) · 🍎 {grandTotalIos} iOS ({iosPercent}%)
           </div>
         </div>
 
@@ -332,24 +445,24 @@ export default function DownloadsPage() {
             style={{ width: `${androidPercent}%` }} 
             className="h-full bg-emerald-500 rounded-full transition-all duration-700 flex items-center justify-center text-[11px] font-black text-white"
           >
-            {androidPercent > 10 ? `🤖 ${androidPercent}% Android (${totalAndroid})` : ''}
+            {androidPercent > 10 ? `🤖 ${androidPercent}% Android (${grandTotalAndroid})` : ''}
           </div>
           <div 
             style={{ width: `${iosPercent}%` }} 
             className="h-full bg-slate-900 rounded-full transition-all duration-700 flex items-center justify-center text-[11px] font-black text-white"
           >
-            {iosPercent > 5 ? `🍎 ${iosPercent}% iOS (${totalIos})` : ''}
+            {iosPercent > 5 ? `🍎 ${iosPercent}% iOS (${grandTotalIos})` : ''}
           </div>
         </div>
 
         <div className="flex justify-between text-xs text-slate-500 font-medium px-1">
           <span className="flex items-center gap-1.5 text-emerald-600 font-bold">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            ئەندرۆید (Android): {totalAndroid.toLocaleString()} ({androidPercent}%)
+            ئەندرۆید (Android): {grandTotalAndroid.toLocaleString()} ({androidPercent}%)
           </span>
           <span className="flex items-center gap-1.5 text-slate-900 font-bold">
             <span className="w-2.5 h-2.5 rounded-full bg-slate-900" />
-            ئایفۆن (iOS): {totalIos.toLocaleString()} ({iosPercent}%)
+            ئایفۆن (iOS): {grandTotalIos.toLocaleString()} ({iosPercent}%)
           </span>
         </div>
       </div>
@@ -399,7 +512,7 @@ export default function DownloadsPage() {
               placeholder="0"
             />
             <p className="text-[11px] text-slate-400 mt-1">
-              کۆی مۆبایلەکان دەبێتە: {liveAndroid} (تاقانە) + {androidBase} = {totalAndroid}
+              کۆی مۆبایلەکان دەبێتە: {liveAllAndroid} (تاقانە) + {androidBase} = {grandTotalAndroid}
             </p>
           </div>
 
@@ -415,7 +528,7 @@ export default function DownloadsPage() {
               placeholder="0"
             />
             <p className="text-[11px] text-slate-400 mt-1">
-              کۆی مۆبایلەکان دەبێتە: {liveIos} (تاقانە) + {iosBase} = {totalIos}
+              کۆی مۆبایلەکان دەبێتە: {liveAllIos} (تاقانە) + {iosBase} = {grandTotalIos}
             </p>
           </div>
         </div>
@@ -429,7 +542,7 @@ export default function DownloadsPage() {
           <div>
             <h2 className="text-xl font-bold text-slate-900">لیستی مۆبایلە تاقانەکان (Unique Device Log)</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              کۆی {filteredDevices.length} مۆبایلی تاقانە (بێ دووبارەبوونەوە) نیشاندراوە بەپێی دوا سەردان (YYYY-MM-DD)
+              کۆی {filteredDevices.length} مۆبایلی تاقانە لەم ماوەیەدا (First Seen & Last Active)
             </p>
           </div>
 
@@ -450,7 +563,7 @@ export default function DownloadsPage() {
                   selectedPlatform === 'android' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500'
                 }`}
               >
-                🤖 Android ({liveAndroid})
+                🤖 Android ({liveAllAndroid})
               </button>
               <button
                 onClick={() => setSelectedPlatform('ios')}
@@ -458,7 +571,7 @@ export default function DownloadsPage() {
                   selectedPlatform === 'ios' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-500'
                 }`}
               >
-                🍎 iOS ({liveIos})
+                🍎 iOS ({liveAllIos})
               </button>
             </div>
 
@@ -483,7 +596,8 @@ export default function DownloadsPage() {
               <tr className="bg-slate-50/60 text-slate-500 text-xs font-bold uppercase tracking-wider">
                 <th className="px-6 py-4">#</th>
                 <th className="px-6 py-4">سیستەم (Platform)</th>
-                <th className="px-6 py-4">دوا سەردان (YYYY-MM-DD HH:mm)</th>
+                <th className="px-6 py-4">📥 یەکەم دابەزاندن (First Seen)</th>
+                <th className="px-6 py-4">⚡ دوا چالاکی (Last Active)</th>
                 <th className="px-6 py-4">ناسنەی ئامێری تاقانە (Device ID)</th>
                 <th className="px-6 py-4">ژمارەی سەردان</th>
               </tr>
@@ -506,8 +620,11 @@ export default function DownloadsPage() {
                         </span>
                       )}
                     </td>
+                    <td className="px-6 py-4 text-xs text-emerald-700 font-bold" dir="ltr">
+                      {formatDateKurdistan(device.first_seen)}
+                    </td>
                     <td className="px-6 py-4 text-xs text-slate-700 font-bold" dir="ltr">
-                      {formatDateKurdistan(device.visited_at)}
+                      {formatDateKurdistan(device.last_seen)}
                     </td>
                     <td className="px-6 py-4 font-mono text-xs text-slate-600" dir="ltr">
                       {device.device_id || 'N/A'}
@@ -521,7 +638,7 @@ export default function DownloadsPage() {
 
               {filteredDevices.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-30" />
                     هیچ چالاکییەک نەدۆزرایەوە بەپێی ئەم فلتەرە
                   </td>

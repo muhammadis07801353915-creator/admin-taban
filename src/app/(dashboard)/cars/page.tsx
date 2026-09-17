@@ -129,6 +129,7 @@ export default function CarsPage() {
               <th className="px-6 py-4 text-sm font-bold text-slate-500 uppercase tracking-wider">Vehicle</th>
               <th className="px-6 py-4 text-sm font-bold text-slate-500 uppercase tracking-wider">Price</th>
               <th className="px-6 py-4 text-sm font-bold text-slate-500 uppercase tracking-wider">City</th>
+              <th className="px-6 py-4 text-sm font-bold text-slate-500 uppercase tracking-wider">Views</th>
               <th className="px-6 py-4 text-sm font-bold text-slate-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-4 text-sm font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
             </tr>
@@ -153,6 +154,12 @@ export default function CarsPage() {
                 </td>
                 <td className="px-6 py-5 font-bold text-[#CC222F] text-lg">${car.price.toLocaleString()}</td>
                 <td className="px-6 py-5 text-slate-600 font-medium">{car.city}</td>
+                <td className="px-6 py-5">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200/60 rounded-full text-xs font-bold">
+                    <Eye size={14} className="text-amber-600" />
+                    {(car as any).views || 0} بینەر
+                  </span>
+                </td>
                 <td className="px-6 py-5">
                   {expired ? (
                     <span className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center w-fit gap-1.5 bg-amber-100 text-amber-800 border border-amber-200">

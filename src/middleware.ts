@@ -31,9 +31,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(target, request.url));
   }
 
-  // 3. Assistant Role restriction: Can ONLY access /cars and subroutes under /cars
+  // 3. Assistant Role restriction: Can access /cars and /downloads
   if (isAuthenticated && role === 'assistant') {
-    if (!pathname.startsWith('/cars') && pathname !== '/api/auth/logout') {
+    if (!pathname.startsWith('/cars') && !pathname.startsWith('/downloads') && pathname !== '/api/auth/logout') {
       return NextResponse.redirect(new URL('/cars', request.url));
     }
   }
